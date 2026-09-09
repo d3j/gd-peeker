@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "GD-Peeker — HTML, Markdown, XML & Text Viewer for Google Drive™",
+  "short_name": "GD-Peeker",
+  "version": "0.1.0",
+  "description": "Open .html, .md, .txt and .xml files from Google Drive™ as rendered pages in a new tab. No server, no sign-in, nothing leaves your browser.",
+  "minimum_chrome_version": "120",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://drive.google.com/*",
+    "https://drive.usercontent.google.com/*",
+    "https://*.googleusercontent.com/*"
+  ],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_scripts": [
+    {
+      "matches": ["https://drive.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "GD-Peeker",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png" }
+  },
+  "options_page": "options.html",
+  "sandbox": { "pages": ["sandbox.html"] },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'",
+    "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; style-src 'self' 'unsafe-inline' https: data:; img-src * data: blob:; font-src * data:; media-src * data: blob:; connect-src *; child-src 'self' data: blob:; frame-src 'self' data: blob:"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

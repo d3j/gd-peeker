@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GD-Peeker</title>
+    <link rel="stylesheet" href="viewer.css">
+    <script type="module" src="viewer.js"></script>
+  </head>
+  <body>
+    <header id="toolbar">
+      <strong id="file-name"></strong>
+      <label><span data-i18n="fileType"></span><select id="kind"></select></label>
+      <label><span data-i18n="charset"></span><select id="encoding"></select></label>
+      <button id="reload" type="button" data-i18n="retry"></button>
+      <button id="drive" type="button" data-i18n="driveOpen"></button>
+      <button id="copy" type="button" data-i18n="copySource"></button>
+      <button id="source" type="button" data-i18n="source"></button>
+      <button id="options" type="button" data-i18n="settings"></button>
+    </header>
+    <section id="notice" hidden>
+      <span data-i18n="htmlNotice"></span>
+      <button id="notice-close" type="button">×</button>
+    </section>
+    <section id="status"></section>
+    <section id="diagnostics" hidden></section>
+    <iframe id="sandbox" src="sandbox.html" sandbox="allow-scripts allow-forms allow-popups allow-modals"></iframe>
+  </body>
+</html>

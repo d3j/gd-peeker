@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GD-Peeker</title>
+    <link rel="stylesheet" href="options.css">
+    <script type="module" src="options.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1 data-i18n="optionsTitle"></h1>
+        <button id="reset" type="button" data-i18n="resetDefaults"></button>
+      </header>
+      <section>
+        <label><input id="autoOpen" type="checkbox"> <span data-i18n="autoOpen"></span></label>
+        <fieldset>
+          <legend data-i18n="autoOpenTypes"></legend>
+          <label><input name="autoOpenTypes" type="checkbox" value="html"> <span data-i18n="html"></span></label>
+          <label><input name="autoOpenTypes" type="checkbox" value="md"> <span data-i18n="md"></span></label>
+          <label><input name="autoOpenTypes" type="checkbox" value="txt"> <span data-i18n="txt"></span></label>
+          <label><input name="autoOpenTypes" type="checkbox" value="xml"> <span data-i18n="xml"></span></label>
+          <label><input name="autoOpenTypes" type="checkbox" value="code"> <span data-i18n="code"></span></label>
+        </fieldset>
+      </section>
+      <section>
+        <h2 data-i18n="html"></h2>
+        <label><input id="allowScripts" type="checkbox"> <span data-i18n="scripts"></span></label>
+        <label><input id="allowExternal" type="checkbox"> <span data-i18n="externalResources"></span></label>
+      </section>
+      <section>
+        <h2 data-i18n="text"></h2>
+        <label><input id="wrap" type="checkbox"> <span data-i18n="wrap"></span></label>
+        <label><input id="lineNumbers" type="checkbox"> <span data-i18n="lineNumbers"></span></label>
+        <label><span data-i18n="fontSize"></span><input id="fontSize" type="number" min="10" max="24" step="1"></label>
+      </section>
+      <section>
+        <h2 data-i18n="settings"></h2>
+        <label>
+          <span data-i18n="charset"></span>
+          <select id="encoding">
+            <option value="auto">Auto</option>
+            <option value="utf-8">UTF-8</option>
+            <option value="shift_jis">Shift_JIS</option>
+            <option value="euc-jp">EUC-JP</option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="uiLang"></span>
+          <select id="uiLang">
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+          </select>
+        </label>
+      </section>
+      <p id="note" data-i18n="settingsNote"></p>
+      <p><a href="privacy.html" target="_blank" rel="noopener" data-i18n="privacyPolicy"></a> <span id="version"></span></p>
+    </main>
+  </body>
+</html>
