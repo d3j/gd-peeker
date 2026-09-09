@@ -6,6 +6,8 @@ GD-Peeker — Google Drive 上の html/md/txt/xml を別タブでレンダリン
 ## 変更時に守ること
 
 - **OAuth・Drive API を導入しない。** 本文取得は `host_permissions` + Cookie 同送 fetch(`extension/lib/drivefetch.js` の 3 段ストラテジー)だけ。`identity` 権限・`googleapis.com` を manifest に足さない(restricted scope の審査が発生し、プライバシー説明「データ送信ゼロ」が崩れる)
+- **`webRequest` は観測のみ。** `chrome.webRequest.onBeforeRequest` の `urls` は SPEC §3.1 の 2 パターン(`…/file/*/d/*/docos/p/sync*`、`…/drivesharing/clientmodel?id=*`)だけ。`webRequestBlocking` / `declarativeNetRequest` を足さない。`clients6.google.com` を host_permissions に足さない(隣接ファイルの先読みで誤発火する上、警告が増える)
+- **ファイル名を `document.title` から取らない。** background の header sniff(`sniffDriveFile`)で `Content-Disposition` から決める
 - **`<all_urls>` を取らない。** `host_permissions` は `https://drive.google.com/*`、`https://drive.usercontent.google.com/*`、`https://*.googleusercontent.com/*` のみ
 - **Drive の DOM に触らない。** content script は `location.href` の監視とメッセージ送受信だけ。行 DOM・メニュー DOM のセレクタを書いた時点で設計違反
 - **CDN 参照禁止。** サードパーティは `scripts/vendor.mjs` で `extension/vendor/` に生成してコミット。`extension/` 配下に `https://` のスクリプト/スタイル参照を書かない(MV3 リモートコード禁止で審査に落ちる)
@@ -36,5 +38,5 @@ E2E 合計: 46項目(html 9 + md 9 + text 8 + settings 14 + fetch failure 6)。�
 
 - Chrome for Testing を ms-playwright キャッシュから自動検出(`CHROME_FOR_TESTING` で明示可)
 - **ブランド版 Chrome 137+ は `--load-extension` 不可**の罠あり。実機確認は `chrome://extensions` のデベロッパーモードで `extension/` を読み込む(手順は [docs/usage.md](docs/usage.md))
-- 隔離 E2E(上の 5 本)は Drive 本体にアクセスしない。**本物の Drive に対する確認は専用プロファイル**で行う: `bash scripts/drive-profile.sh` で Chrome for Testing を `~/.gd-peeker/profile` で素起動し、テスト用 Google アカウントで一度ログインして閉じる → 以後 `scripts/drive-inspect.mjs`(調査)と `tests/e2e-drive.mjs`(実機 E2E、作成予定)がそのプロファイルを Playwright から使う。**hmw.gr.jp や本命の個人アカウントではログインしない**(自動操作対象に医療情報や本命セッションを置かない)。プロファイルはリポ外(`.gitignore` 済み)
-- **実機で判明した Drive の挙動(2026-09-09)**: 一覧でのダブルクリックは URL を変えない(`/drive/my-drive` や `/drive/search?q=…` のまま)。SPEC §3.1 の「遷移先 URL を検知」は旧 Drive の前提で、`/file/d/<id>/view` になるのは「新しいタブで開く」のときだけ。手動(アイコン)経路と Cookie 同送 fetch は実機で動作確認済み
+- 隔離 E2E(上の 5 本)は Drive 本体にアクセスしない。**本物の Drive に対する確認は専用プロファイル**で行う: `bash scripts/drive-profile.sh` で Chrome for Testing を `~/.gd-peeker/profile` で素起動し、テスト用 Google アカウントで一度ログインして閉じる → 以後 `scripts/drive-inspect.mjs`(調査)と `tests/e2e-drive.mjs`(実機 E2E、作成予定)がそのプロファイルを Playwright から使う。プロファイルはリポ外(`.gitignore` 済み)。**2026-09-10 千田の判断で hmw.gr.jp 本アカウントでログイン済み。自動操作の読み書きは Drive フォルダ `1DkhF-K_7FymE8hWRNh8ehvEnS16rBvhW`(GD-Peeker-dev)の中だけ**に限る。フォルダ外のファイル・フォルダに触らない(一覧の閲覧も my-drive ではなくこのフォルダ URL を開く)。mock keychain なので作業が終わったら `rm -rf ~/.gd-peeker/profile` を勧める
+- **実機で判明した Drive の挙動(2026-09-09/10)**: 一覧でのダブルクリックは URL も title も変えず、fileId 入りの iframe も出ない。代わりに `…/file/u/0/d/<id>/docos/p/sync` と `drivesharing/clientmodel?id=<id>` が飛ぶ(SPEC §3.1)。`/file/d/<id>/view` になるのは「新しいタブで開く」のときだけ。手動(アイコン)経路と Cookie 同送 fetch は実機で動作確認済み

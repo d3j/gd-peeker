@@ -44,10 +44,18 @@
 - [x] README「現在の状態」更新、CLAUDE.md に E2E 件数を記載
 - [x] SPEC §11 のうち機械確認できる項目(unit/E2E 全パス・外部参照なし・permissions/host_permissions・docs 3 点)は充足。残りは下の「実機確認」(Drive 実機でのダブルクリック・アイコン・Shift_JIS)
 
+### M6 自動起動の再設計 — webRequest 観測 + header sniff(SPEC §3.1/§3.2 改訂版)
+- [ ] manifest に `webRequest`(観測のみ)。background で `onBeforeRequest`(2 パターン)→ 10 秒デデュープ → `sniffDriveFile` → 種別判定 → viewer
+- [ ] `lib/drivefetch.js` に `sniffDriveFile(fileId)`(GET + ヘッダ受信で abort、`{fileName, contentType, ok, attempts}`)
+- [ ] `previewByTab` と `openedByDriveTab` を `chrome.storage.session` へ。content.js は fileId だけ送る(`drive:title?` 廃止)
+- [ ] アイコン: URL 一致 → previewByTab(30 分以内)→ options。バッジも同基準
+- [ ] unit: webRequest URL → fileId 抽出、sniff の判定(HTML ページ/Content-Disposition 無し/対象外拡張子)
+- [ ] `tests/e2e-drive.mjs`(実機、フォルダ 1DkhF… の中だけ)4 形式 + previewByTab 確認
+- [ ] docs/usage.md の実機確認手順を「ダブルクリックで開く」に合わせて更新、store-listing の権限正当化に webRequest を追加
+
 ## 実機確認
 - [x] 「アプリで開く → 新しいタブで開く」+ アイコンクリックで html が描画された(2026-09-09 千田)= **Cookie 同送 fetch は通る**
-- [ ] **一覧でのダブルクリックで自動起動しない**(Drive は URL を変えない)。プレビュー時に読み込まれる iframe の URL に fileId が入るかで次の手が決まる → `scripts/drive-inspect.mjs` で調査(要: テスト用アカウントで `scripts/drive-profile.sh` ログイン)
-- [ ] 自動起動の再設計: URL 検知 → (候補) `all_frames: true` でプレビュー iframe 自身の URL から fileId / ファイル名は `document.title` ではなく background がヘッダだけ取得して `Content-Disposition` から判定 / アイコン経路はプレビュー中の fileId を port の生存で追跡
+- [x] 一覧ダブルクリックの調査(2026-09-10、専用プロファイル + hmw アカウント、フォルダ GD-Peeker-dev 内): URL/title 不変、fileId 入り iframe 無し、**通信に fileId が乗る**(`docos/p/sync`、`drivesharing/clientmodel`)→ M6 へ
 - [ ] 自分の Drive で html / md / Shift_JIS txt / xml をダブルクリック → 期待どおり
 - [ ] 共有された他人のファイル(閲覧権限のみ)でも取れるか
 - [ ] hmw.gr.jp アカウント(Workspace)と gmail アカウントの両方で取れるか(`authuser` 複数ログイン時の挙動)

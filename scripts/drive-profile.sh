@@ -34,4 +34,4 @@ exec "$CHROME" \
   --use-mock-keychain \
   --disable-extensions-except="$ROOT/extension" \
   --load-extension="$ROOT/extension" \
-  "https://drive.google.com/drive/my-drive"
+  "https://drive.google.com/drive/folders/1DkhF-K_7FymE8hWRNh8ehvEnS16rBvhW"

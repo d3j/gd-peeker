@@ -4,7 +4,7 @@
 // [GD-Peeker] ログをダンプする。
 //
 //   cd <playwright-core を入れた作業ディレクトリ>
-//   node ~/Code/gd-peeker/scripts/drive-inspect.mjs "https://drive.google.com/drive/my-drive" [ダブルクリックするファイル名]
+//   node ~/Code/gd-peeker/scripts/drive-inspect.mjs "https://drive.google.com/drive/folders/1DkhF-K_7FymE8hWRNh8ehvEnS16rBvhW" [ダブルクリックするファイル名]
 import { createRequire } from 'node:module';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +17,7 @@ const { chromium } = require('playwright-core');
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const EXT_DIR = join(ROOT, 'extension');
 const PROFILE = process.env.GD_PEEKER_PROFILE || join(homedir(), '.gd-peeker', 'profile');
-const [url = 'https://drive.google.com/drive/my-drive', fileName] = process.argv.slice(2);
+const [url = 'https://drive.google.com/drive/folders/1DkhF-K_7FymE8hWRNh8ehvEnS16rBvhW', fileName] = process.argv.slice(2);
 
 function findChrome() {
   if (process.env.CHROME_FOR_TESTING) return process.env.CHROME_FOR_TESTING;
@@ -65,8 +65,10 @@ const dump = async (label) => {
 };
 await dump('after load');
 if (fileName) {
-  const row = page.getByText(fileName, { exact: true }).first();
+  // Drive の一覧は行に aria-label="<name> <type>" を持つ(テキスト完全一致では掴めない)
+  const row = page.locator(`[aria-label^="${fileName} "]`).first();
   await row.waitFor({ timeout: 10000 });
+  console.log('row data-id:', await row.evaluate((el) => el.closest('[data-id]')?.getAttribute('data-id') ?? ''));
   await row.dblclick();
   await page.waitForTimeout(4000);
   await dump(`after dblclick ${fileName}`);

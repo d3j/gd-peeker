@@ -48,7 +48,7 @@ PRIVACY.md                 # ストア掲載用プライバシーポリシー(�
   "version": "0.1.0",
   "description": "Open .html, .md, .txt and .xml files from Google Drive™ as rendered pages in a new tab. No server, no sign-in, nothing leaves your browser.",
   "minimum_chrome_version": "120",
-  "permissions": ["storage"],
+  "permissions": ["storage", "webRequest"],
   "host_permissions": [
     "https://drive.google.com/*",
     "https://drive.usercontent.google.com/*",
@@ -71,24 +71,31 @@ PRIVACY.md                 # ストア掲載用プライバシーポリシー(�
 }
 ```
 
-- `permissions` は `storage` だけ。`tabs` は不要(`chrome.tabs.create` と、`host_permissions` 対象タブの `url` 参照は `tabs` 権限無しで可)。`webNavigation` / `scripting` / `identity` / `contextMenus` を足さない
+- `permissions` は `storage` と `webRequest`(観測のみ)だけ。`tabs` は不要(`chrome.tabs.create` と、`host_permissions` 対象タブの `url` 参照は `tabs` 権限無しで可)。`webNavigation` / `scripting` / `identity` / `contextMenus` を足さない
 - sandbox の CSP は「外部リソース許可」時の上限。締める方向の制御は §5.2 のとおり srcdoc 内 meta CSP で行う
 - `web_accessible_resources` は不要(viewer は拡張が自分で開く)
 
 ## 3. 入口
 
-### 3.1 自動(content.js)
+### 3.1 自動 — background の webRequest 観測(2026-09-10 改訂)
 
-- 監視対象 URL: `^https://drive\.google\.com/file/d/([\w-]+)/(view|preview)` と `^https://drive\.google\.com/(open|uc)\?.*[?&]id=([\w-]+)`
-- Drive はプレビューを SPA 内の `pushState` で開く(ダブルクリック)ことも、フル遷移で開く(新しいタブで開く)こともある。両方拾うため content script は **`window.navigation` の `navigate`/`currententrychange` イベント + 500ms の `location.href` ポーリング**(Navigation API が無い環境向け)の両方で URL 変化を追う。`document_idle` 時点の URL も初回判定する
-- fileId を検出したら `chrome.runtime.sendMessage({type:'drive:preview', fileId, title: document.title})` を background に送る。**同一 fileId は再送しない**(プレビューを閉じて別ファイルを開いたときだけ再送)。ファイル名は `document.title` から ` - Google Drive` 接尾辞を除いたものを **ヒント**として同送する(正は §4 の Content-Disposition)
-- background は設定 `autoOpen` が on で、かつ **ファイル名ヒントの拡張子が `autoOpenTypes` に含まれる場合**に `chrome.tabs.create({url: viewer.html?id=<id>&name=<hint>, openerTabId, index: tab.index+1})` を実行する。ヒントが取れない(タイトル未更新)場合は 300ms 後に content script に再問い合わせ(`drive:title?`)し、それでも不明なら**開かない**(未対応形式で新タブが増える誤爆を避ける)
-- 同一 Drive タブから同一 fileId の viewer を **二重に開かない**。background は `Map<driveTabId, {fileId, viewerTabId}>` を持ち、既存 viewer タブがあれば `chrome.tabs.update(viewerTabId, {active:true})` にする(viewer が閉じられていたら作り直す)
+**実機で確認した Drive の挙動(2026-09-10、専用プロファイル)**: 一覧でのダブルクリックは URL を変えない(`/drive/folders/<id>` のまま)。`document.title` も変わらず、fileId を含む iframe も現れない(プレビューは Drive 自身の DOM で描かれる)。一方でプレビューを開いた瞬間に Drive が次のリクエストを送り、URL に fileId が入る:
+
+- `https://drive.google.com/file/*/d/<fileId>/docos/p/sync?*`(開いたファイルだけで発火)
+- `https://drive.google.com/drivesharing/clientmodel?id=<fileId>&*`(同上)
+- 参考: `https://clients6.google.com/drive/v2internal/files/<id>?fields=preview…` は**隣のファイルの先読みでも発火する**ので使わない。`clients6.google.com` を host_permissions に足さない
+
+- background が `chrome.webRequest.onBeforeRequest` を**観測のみ**で登録し(`urls` は上の 2 パターン、`types: ['xmlhttprequest']`)、`details.tabId` と URL から fileId を得る。`webRequestBlocking` / `declarativeNetRequest` は使わない。manifest の `permissions` に `webRequest` を追加する(単体では権限警告を増やさない。警告は host_permissions 由来のみ)
+- 同一 tab・同一 fileId を 10 秒以内に再観測したら無視する(1 回のプレビューで 2 本とも飛ぶ)
+- **ファイル名・種別は `document.title` に頼らない。** background が `https://drive.google.com/uc?export=download&id=<id>` を `credentials:'include'` で GET し、ヘッダを受け取った時点で `AbortController` で本文を中断する(header sniff、`lib/drivefetch.js` の `sniffDriveFile(fileId)` として実装。`Content-Disposition` 解析は既存の `parseContentDisposition` を使う)。得た名前から `filetype.js` で種別を決め、`autoOpen` かつ `autoOpenTypes` に含まれる場合だけ viewer を開く。名前が取れない・対象外は開かない。sniff が HTML(Google のログイン/確認ページ)を返したら失敗扱い
+- `previewByTab: {[tabId]: {fileId, fileName, kind, at}}` を **`chrome.storage.session`** に持つ(service worker 再起動で消えない)。viewer には `name=<fileName>` を渡す。二重起動防止の `openedByDriveTab` も同じく session storage へ
+- content.js の URL 検知(`/file/d/<id>/view`)は「新しいタブで開く」経路として残す。こちらも title ではなく同じ sniff で名前を決める(content.js は `drive:preview` に fileId だけ送ればよい。`drive:title?` は廃止)
+- webRequest リスナは service worker のトップレベルで登録する(イベントで SW が起きる)
 
 ### 3.2 手動(拡張アイコン)
 
-- `chrome.action.onClicked`: アクティブタブの URL が §3.1 のパターンに一致 → viewer を開く(`autoOpen` 設定・対象形式に**関わらず**開く。手動は常に開く)。一致しない → `chrome.runtime.openOptionsPage()`
-- `chrome.tabs.onUpdated` / `onActivated` で URL を見て、一致するタブでは `chrome.action.setBadgeText({tabId, text:'●'})`+`setTitle('Open in GD-Peeker')`、それ以外は badge 無し + `setTitle('GD-Peeker settings')`。`chrome.action.disable` は使わない(無効化するとクリックで設定が開けなくなる)
+- `chrome.action.onClicked`: アクティブタブの URL が `/file/d/<id>/view` 形に一致 → その fileId で viewer(種別に関わらず開く)。一致しない → `previewByTab[tab.id]` があり `at` が 30 分以内 → その fileId で viewer。どちらも無し → `chrome.runtime.openOptionsPage()`
+- バッジ: 一致する URL、または `previewByTab` にエントリがあるタブに `●`。`chrome.action.disable` は使わない
 
 ## 4. 本文取得(lib/drivefetch.js)
 
@@ -213,6 +220,7 @@ tabflock の `messages.js` と同じ形(`t(key, params)`、`{en:{...}, ja:{...}}
   - settings: options の変更が `storage.local` に入る / 開いている viewer に反映 / `uiLang:'ja'` で日本語
   - fetch 失敗: route で 403 を返す → 診断パネルに 3 段の attempts が並ぶ
 - 拡張 ID は Chrome for Testing 起動後に `chrome://extensions` ではなく service worker の URL(`context.serviceWorkers()`)から取る(tabflock の E2E と同じ)
+- **実機 E2E `tests/e2e-drive.mjs`**(専用プロファイル `~/.gd-peeker/profile`、`scripts/drive-inspect.mjs` と同じ起動。Drive フォルダ `https://drive.google.com/drive/folders/1DkhF-K_7FymE8hWRNh8ehvEnS16rBvhW`(GD-Peeker-dev)の中だけを読み書きする): フォルダを開く → `tests/fixtures/gdp-*` の各行(`[aria-label^="<name> "]`、テストハーネスは DOM を使ってよい)をダブルクリック → `context.waitForEvent('page')` で `viewer.html?id=<行の data-id>` が開く → 描画を確認(html: sandbox 内 user iframe に `#ok` / md: `.md-root h1` / sjis txt: `.text-pre` に「日本語のテキスト」/ xml: `.xml-tree`)→ viewer を閉じ、Esc でプレビューを閉じる。さらにアイコン経路: プレビューを開いたまま `chrome.action.onClicked` 相当を service worker から `chrome.action.onClicked.dispatch` は不可なので、`sw.evaluate` で `openViewer` を直接呼ぶ代わりに **`previewByTab` が session storage に入っていること**を確認する
 
 ## 10. ドキュメント・ストア
 
@@ -223,10 +231,10 @@ tabflock の `messages.js` と同じ形(`t(key, params)`、`{en:{...}, ja:{...}}
 
 ## 11. 完了の定義(v0.1.0)
 
-- [ ] `chrome://extensions` で `extension/` を読み込み、Drive で `.html/.md/.txt/.xml` をダブルクリックすると新タブで描画される(開発者の実機で確認)
+- [ ] Drive で `.html/.md/.txt/.xml` をダブルクリックすると新タブで描画される(`tests/e2e-drive.mjs` 4 形式パス)
 - [ ] 拡張アイコンのクリックでプレビュー画面から同じ viewer が開き、それ以外の画面では options が開く
 - [ ] Shift_JIS の日本語 txt が自動判定で読める
 - [ ] `node --test tests/unit/` 全パス、E2E 全パス(件数を CLAUDE.md に記載)
 - [ ] `extension/` 配下に外部のスクリプト/スタイル参照が無い。確認コマンドは `grep -rn "https://" extension --include='*.html' --include='*.js' --include='*.css' | grep -v "^extension/vendor/" | grep -vE "drive\.google\.com|drive\.usercontent|googleusercontent|accounts\.google"` が空であること。**Drive のダウンロード URL は本文取得に必要な文字列であり対象外。URL を文字列連結で分割して grep を逃れるような変更はしない**(2026-09-09 に一度そうされ、レビューで戻した)
-- [ ] `manifest.json` の permissions が `storage` のみ、host_permissions が 3 つのみ
+- [ ] `manifest.json` の permissions が `storage` と `webRequest` のみ、host_permissions が 3 つのみ
 - [ ] docs/usage.md・docs/store-listing.md・PRIVACY.md がある

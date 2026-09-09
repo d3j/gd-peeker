@@ -1,0 +1,2 @@
+GD-Peeker Shift_JIS fixture
+日本語のテキストです。文字化けせずに読めれば成功。
