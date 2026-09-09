@@ -36,4 +36,5 @@ E2E 合計: 46項目(html 9 + md 9 + text 8 + settings 14 + fetch failure 6)。�
 
 - Chrome for Testing を ms-playwright キャッシュから自動検出(`CHROME_FOR_TESTING` で明示可)
 - **ブランド版 Chrome 137+ は `--load-extension` 不可**の罠あり。実機確認は `chrome://extensions` のデベロッパーモードで `extension/` を読み込む(手順は [docs/usage.md](docs/usage.md))
-- Drive 本体には E2E からアクセスしない。`drivefetch.js` の実機確認は開発者自身の Chrome で行う(手順と確認項目は [docs/usage.md](docs/usage.md) の「実機確認」)
+- 隔離 E2E(上の 5 本)は Drive 本体にアクセスしない。**本物の Drive に対する確認は専用プロファイル**で行う: `bash scripts/drive-profile.sh` で Chrome for Testing を `~/.gd-peeker/profile` で素起動し、テスト用 Google アカウントで一度ログインして閉じる → 以後 `scripts/drive-inspect.mjs`(調査)と `tests/e2e-drive.mjs`(実機 E2E、作成予定)がそのプロファイルを Playwright から使う。**hmw.gr.jp や本命の個人アカウントではログインしない**(自動操作対象に医療情報や本命セッションを置かない)。プロファイルはリポ外(`.gitignore` 済み)
+- **実機で判明した Drive の挙動(2026-09-09)**: 一覧でのダブルクリックは URL を変えない(`/drive/my-drive` や `/drive/search?q=…` のまま)。SPEC §3.1 の「遷移先 URL を検知」は旧 Drive の前提で、`/file/d/<id>/view` になるのは「新しいタブで開く」のときだけ。手動(アイコン)経路と Cookie 同送 fetch は実機で動作確認済み

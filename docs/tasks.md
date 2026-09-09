@@ -44,7 +44,10 @@
 - [x] README「現在の状態」更新、CLAUDE.md に E2E 件数を記載
 - [x] SPEC §11 のうち機械確認できる項目(unit/E2E 全パス・外部参照なし・permissions/host_permissions・docs 3 点)は充足。残りは下の「実機確認」(Drive 実機でのダブルクリック・アイコン・Shift_JIS)
 
-## 実機確認(開発者=千田が行う)
+## 実機確認
+- [x] 「アプリで開く → 新しいタブで開く」+ アイコンクリックで html が描画された(2026-09-09 千田)= **Cookie 同送 fetch は通る**
+- [ ] **一覧でのダブルクリックで自動起動しない**(Drive は URL を変えない)。プレビュー時に読み込まれる iframe の URL に fileId が入るかで次の手が決まる → `scripts/drive-inspect.mjs` で調査(要: テスト用アカウントで `scripts/drive-profile.sh` ログイン)
+- [ ] 自動起動の再設計: URL 検知 → (候補) `all_frames: true` でプレビュー iframe 自身の URL から fileId / ファイル名は `document.title` ではなく background がヘッダだけ取得して `Content-Disposition` から判定 / アイコン経路はプレビュー中の fileId を port の生存で追跡
 - [ ] 自分の Drive で html / md / Shift_JIS txt / xml をダブルクリック → 期待どおり
 - [ ] 共有された他人のファイル(閲覧権限のみ)でも取れるか
 - [ ] hmw.gr.jp アカウント(Workspace)と gmail アカウントの両方で取れるか(`authuser` 複数ログイン時の挙動)
