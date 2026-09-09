@@ -15,3 +15,136 @@ body {
   height: 100%;
   border: 0;
 }
+
+#user[hidden],
+#app[hidden] {
+  display: none;
+}
+
+#app {
+  min-height: 100%;
+}
+
+.md-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.md-toc {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  width: 220px;
+  max-height: 100vh;
+  overflow: auto;
+  padding: 18px 16px;
+  border-left: 1px solid #dfe3ea;
+  background: #fff;
+  font: 13px/1.4 system-ui, sans-serif;
+}
+
+.md-toc a {
+  display: block;
+  margin: 0 0 7px;
+  overflow: hidden;
+  color: #3c4043;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-pre,
+.code-pre {
+  min-height: 100vh;
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  line-height: 1.55;
+  white-space: pre;
+  content-visibility: auto;
+}
+
+.text-pre.wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.line {
+  display: block;
+}
+
+.ln {
+  display: inline-block;
+  min-width: 4ch;
+  margin-right: 12px;
+  color: #6f7782;
+  text-align: right;
+  user-select: none;
+}
+
+.xml-view {
+  min-height: 100%;
+  padding: 12px 16px 24px;
+  background: #fff;
+  color: #202124;
+  font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.xml-controls {
+  position: sticky;
+  top: 0;
+  display: flex;
+  gap: 8px;
+  padding: 4px 0 10px;
+  background: #fff;
+}
+
+.xml-controls button {
+  min-height: 26px;
+  border: 1px solid #c7cdd8;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.xml-line {
+  white-space: pre;
+}
+
+.xml-toggle,
+.xml-spacer {
+  display: inline-block;
+  width: 22px;
+  margin-right: 2px;
+  border: 0;
+  background: transparent;
+  color: #3c4043;
+  font: inherit;
+  cursor: pointer;
+}
+
+.xml-spacer {
+  cursor: default;
+}
+
+.notice {
+  margin: 0 0 12px;
+  padding: 10px;
+  border: 1px solid #dfe3ea;
+  background: #fff8df;
+  font: 13px/1.4 system-ui, sans-serif;
+}
+
+@media (max-width: 760px) {
+  .md-view {
+    display: block;
+  }
+
+  .md-toc {
+    position: static;
+    width: auto;
+    max-height: none;
+    border: 0;
+    border-top: 1px solid #dfe3ea;
+  }
+}

@@ -1,5 +1,6 @@
 import { fetchDriveFile } from './lib/drivefetch.js';
 import { detectFileType, VIEW_KINDS } from './lib/filetype.js';
+import { decode, displayEncodingName } from './lib/encoding.js';
 import { loadSettings, onSettingsChanged } from './lib/settings.js';
 import { setLang, t } from './lib/messages.js';
 
@@ -24,7 +25,15 @@ const els = {
 };
 
 let settings = await loadSettings();
-let current = { text: '', kind: 'txt', fileName: nameHint || fileId || 'file', contentType: '' };
+let current = {
+  bytes: null,
+  text: '',
+  kind: 'txt',
+  fileName: nameHint || fileId || 'file',
+  contentType: '',
+  detected: { ext: '', language: null },
+  decoding: null,
+};
 setLang(settings.uiLang);
 initControls();
 applyI18n();
@@ -42,7 +51,7 @@ els.kind.addEventListener('change', async () => {
 });
 els.encoding.addEventListener('change', async () => {
   await chrome.storage.session.set({ [`encoding:${fileId}`]: els.encoding.value });
-  render();
+  await decodeAndRender();
 });
 els.noticeClose.addEventListener('click', async () => {
   els.notice.hidden = true;
@@ -97,52 +106,62 @@ async function render() {
   try {
     const result = await fetchDriveFile(fileId, { nameHint, driveTabId });
     const overrideData = await chrome.storage.session.get([`viewKind:${fileId}`, `encoding:${fileId}`]);
-    const encoding = overrideData[`encoding:${fileId}`] || settings.encoding.default || 'auto';
-    const text = decodeBytes(result.bytes, encoding);
     const detected = detectFileType({ name: result.fileName, mime: result.contentType });
     current = {
-      text,
+      bytes: result.bytes,
+      text: '',
       kind: overrideData[`viewKind:${fileId}`] || detected.kind || 'txt',
       fileName: result.fileName,
       contentType: result.contentType,
       attempts: result.attempts,
+      detected,
+      decoding: null,
     };
     els.fileName.textContent = current.fileName;
     els.kind.value = current.kind;
     document.title = `${current.fileName} — GD-Peeker`;
-    await maybeShowHtmlNotice(current.kind);
-    renderSandbox(current.kind);
+    await decodeAndRender(overrideData);
   } catch (err) {
     showError(err.attempts || [{ strategy: 'fetch', error: err.message }]);
   }
 }
 
+async function decodeAndRender(sessionData = null) {
+  if (!current.bytes) return;
+  const overrideData = sessionData || (await chrome.storage.session.get([`encoding:${fileId}`]));
+  const selectedEncoding = overrideData[`encoding:${fileId}`] || settings.encoding.default || 'auto';
+  current.decoding = decode(current.bytes, selectedEncoding);
+  current.text = current.decoding.text;
+  updateEncodingControl(selectedEncoding, current.decoding);
+  await maybeShowHtmlNotice(current.kind);
+  renderSandbox(current.kind);
+}
+
 function renderSandbox(kind) {
-  const renderKind = kind === 'html' ? 'html' : 'code';
   els.sandbox.contentWindow.postMessage(
     {
       type: 'render',
-      kind: renderKind,
+      kind,
       originalKind: kind,
       text: current.text,
       html: current.text,
       options: {
         html: settings.html,
+        md: settings.md,
         txt: settings.txt,
-        unsupportedLabel: kind === 'html' ? '' : t('unsupported'),
+        code: { language: current.detected?.language, ext: current.detected?.ext },
+        xml: { parseErrorLabel: t('xmlParseError'), expandAll: t('expandAll'), collapseAll: t('collapseAll') },
       },
     },
     '*'
   );
 }
 
-function decodeBytes(bytes, encoding) {
-  const normalized = encoding === 'auto' ? 'utf-8' : encoding;
-  try {
-    return new TextDecoder(normalized, { fatal: false }).decode(bytes);
-  } catch {
-    return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-  }
+function updateEncodingControl(selectedEncoding, result) {
+  const autoOption = [...els.encoding.options].find((option) => option.value === 'auto');
+  if (autoOption) autoOption.textContent = `${displayEncodingName(result.encoding)} (auto)`;
+  const values = new Set([...els.encoding.options].map((option) => option.value));
+  els.encoding.value = values.has(selectedEncoding) ? selectedEncoding : result.encoding;
 }
 
 function showError(attempts) {

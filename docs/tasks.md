@@ -16,16 +16,19 @@
 - Codex の解釈(採用): 5MB 超の確認は M4 へ / 拡張子なしは MIME より SPEC 表を優先(→レビューで自動起動対象から外した)
 - 既知の限界: background の二重起動防止 Map は service worker の再起動で消える(手動クリックで同じファイルの viewer が 2 枚開きうる)。v0.2 候補に `chrome.storage.session` 化を記載
 
-### M2 Markdown
-- [ ] `scripts/vendor.mjs` + `scripts/package.json`(esbuild、バージョン固定)→ `vendor/md-runtime.js`, `vendor/mermaid.js`, テーマ css, `VERSIONS.md`, `LICENSES.txt`(SPEC §8)
-- [ ] `lib/mdrender.js`(preset / plugins / hljs / DOMPurify)+ sandbox 側 mermaid 描画 + TOC + テーマ・ダーク追従(SPEC §5.3)
-- [ ] unit: mdrender / E2E: e2e-viewer-md.mjs
+### M2 Markdown — 完了(2026-09-09、Codex 実装 + Claude レビュー)
+- [x] `scripts/vendor.mjs` + `scripts/package.json`(esbuild、バージョン固定)→ `vendor/md-runtime.js`, `vendor/mermaid.js`, テーマ css, `VERSIONS.md`, `LICENSES.txt`(SPEC §8)
+- [x] `lib/mdrender.js`(preset / plugins / hljs / DOMPurify)+ sandbox 側 mermaid 描画 + TOC + テーマ・ダーク追従(SPEC §5.3)
+- [x] unit: mdrender / E2E: e2e-viewer-md.mjs 9 項目
+- Codex の解釈(採用): sandbox ページは unique origin で ES module を import できないため、first-party の mdrender/xmlformat も `vendor/sandbox-runtime.js` に IIFE 化して読む(CLAUDE.md に再生成の注意を記載)。unit の DOMPurify は Node に DOM が無いため契約 shim、実体は E2E で検証
+- レビューで直したもの: `vendor/mermaid.js`(未 minify で 7.9MB)を sandbox.html から常時読んでいた → esbuild minify(3.3MB)+ mermaid ブロックがある文書でだけ動的ロード。md-runtime も 711KB → 300KB / md E2E の「script が除去された」が sandbox.html 自身の `<script src>` を数えて必ず落ちていた → 描画結果内で数え、実行されなかったことも確認
 
-### M3 txt / xml / code + 文字コード
-- [ ] `lib/encoding.js`(BOM → UTF-8 厳格 → SJIS/EUC スコアリング → fallback)+ ツールバーの判定表示・手動上書き(SPEC §5.5)
-- [ ] `lib/xmlformat.js`(整形・折りたたみ・不正 xml フォールバック)(SPEC §5.4)
-- [ ] code(hljs 自動判定、json 整形)
-- [ ] unit: encoding(各エンコーディングの fixture)/ xmlformat / E2E: e2e-viewer-text.mjs
+### M3 txt / xml / code + 文字コード — 完了(2026-09-09、Codex 実装 + Claude レビュー)
+- [x] `lib/encoding.js`(BOM → UTF-8 厳格 → SJIS/EUC スコアリング → fallback)+ ツールバーの判定表示・手動上書き(SPEC §5.5)
+- [x] `lib/xmlformat.js`(整形・折りたたみ・不正 xml フォールバック)(SPEC §5.4)
+- [x] code(hljs 自動判定、json 整形)
+- [x] unit: encoding(各エンコーディングの fixture)/ xmlformat / E2E: e2e-viewer-text.mjs 8 項目
+- Codex の解釈(採用): xmlformat の unit は Node に DOMParser が無いため同一 API 内の Node 用 tokenizer 経路を検証(ブラウザでは DOMParser 経路)
 
 ### M4 設定画面 + 仕上げ
 - [ ] options.html(SPEC §6 の全項目、即時保存、既定に戻す、onChanged で viewer 再描画)
