@@ -19,6 +19,7 @@ HTML は拡張ページと同一オリジンにならない sandbox iframe 内�
 ## Permission Justification
 
 - `storage`: saves user settings such as renderer options, default encoding, and UI language.
+- `webRequest`: observes only two Google Drive preview request patterns so the extension can learn the ID of the file the user just opened in Drive preview. Requests are not blocked, modified, redirected, or read.
 - `https://drive.google.com/*`: fetches the selected Drive file body using the user's existing browser session.
 - `https://drive.usercontent.google.com/*`: follows Google Drive download redirects and large-file download flows.
 - `https://*.googleusercontent.com/*`: follows Google Drive download redirects served from Google user content hosts.

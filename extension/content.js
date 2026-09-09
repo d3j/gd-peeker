@@ -2,10 +2,6 @@ let lastHref = '';
 let lastSentFileId = '';
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === 'drive:title?') {
-    sendResponse({ ok: true, title: document.title });
-    return false;
-  }
   if (message?.type === 'drive:fetch') {
     fetchDriveFile(message.fileId).then(sendResponse);
     return true;
@@ -22,16 +18,12 @@ function parseDrivePreviewUrl(url) {
   return fileId ? { fileId } : null;
 }
 
-function normalizeDriveTitle(title) {
-  return String(title).replace(/\s+-\s+Google Drive\s*$/i, '').trim();
-}
-
 function checkLocation() {
   const href = location.href;
   if (href === lastHref) return;
   lastHref = href;
   const match = parseDrivePreviewUrl(href);
-  console.debug('[GD-Peeker] url', href, match ? `fileId=${match.fileId}` : 'no match', 'title=', document.title);
+  console.debug('[GD-Peeker] url', href, match ? `fileId=${match.fileId}` : 'no match');
   if (!match) {
     lastSentFileId = ''; // preview closed: the same file may be opened again later
     return;
@@ -42,7 +34,6 @@ function checkLocation() {
     {
       type: 'drive:preview',
       fileId: match.fileId,
-      title: normalizeDriveTitle(document.title),
     },
     (response) => console.debug('[GD-Peeker] background replied', response, chrome.runtime.lastError?.message ?? '')
   );

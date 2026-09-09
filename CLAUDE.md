@@ -25,18 +25,21 @@ GD-Peeker — Google Drive 上の html/md/txt/xml を別タブでレンダリン
 ## テストの実行方法
 
 ```sh
-node --test tests/unit/            # lib/* の単体テスト(encoding / filetype / xmlformat / md pipeline)
+node --test tests/unit/*.test.mjs  # lib/* の単体テスト(encoding / filetype / xmlformat / md pipeline / drivefetch sniff / drive URL)
 cd <任意の作業ディレクトリ> && npm i playwright-core
 node ~/Code/gd-peeker/tests/e2e-viewer-html.mjs   # 9項目(html: sandbox 描画・スクリプト実行/禁止・外部リソース CSP・null origin・title 返却・子 iframe からの render 乗っ取り拒否)
 node ~/Code/gd-peeker/tests/e2e-viewer-md.mjs     # 9項目(md: GFM 表/タスク/脚注・script 除去と不実行・front matter・hljs・mermaid→svg・TOC)
 node ~/Code/gd-peeker/tests/e2e-viewer-text.mjs   # 8項目(Shift_JIS 自動判定と手動上書き / xml 整形・折りたたみ・不正 xml フォールバック / json 整形)
 node ~/Code/gd-peeker/tests/e2e-settings.mjs      # 14項目(options: 設定永続化・開いている viewer への反映・言語切替)
 node ~/Code/gd-peeker/tests/e2e-fetch-failure.mjs # 6項目(fetch 失敗: direct 403 / direct 500 / content-script no-drive-tab の診断・文言・操作ボタン)
+node ~/Code/gd-peeker/tests/e2e-drive.mjs         # 15項目(実機 Drive: GD-Peeker-dev フォルダ内の html/md/Shift_JIS txt/xml。ダブルクリック → 自動起動 → 描画 → previewByTab。既定アプリに取られる形式は /file/d/<id>/view 経路で代替)
 ```
 
-E2E 合計: 46項目(html 9 + md 9 + text 8 + settings 14 + fetch failure 6)。全 5 本 + unit 25 件が 2026-09-09 時点で Chrome for Testing でパス。
+隔離 E2E 合計: 46項目(html 9 + md 9 + text 8 + settings 14 + fetch failure 6)。実機 E2E: 15項目(drive)。unit 33件。**2026-09-10 時点で unit 33 / 隔離 E2E 46 / 実機 E2E 15 がすべてパス**(Chrome for Testing、実機は hmw アカウントの GD-Peeker-dev フォルダ)。
 
 - Chrome for Testing を ms-playwright キャッシュから自動検出(`CHROME_FOR_TESTING` で明示可)
+- **永続プロファイルは拡張の service worker スクリプトをキャッシュする**(2026-09-10 実機で確認: background.js を更新しても古いものが動き続け、webRequest リスナが無かった)。実機ハーネス(`tests/e2e-drive.mjs`、`scripts/drive-inspect.mjs`)は起動直後に `chrome.runtime.reload()` で拡張を起動し直す(`freshServiceWorker`)。手動確認でも `git pull` 後は `chrome://extensions` の再読み込みが必須
+- **Drive 側で拡張子に既定アプリ(例: `.md` → StackEdit)が設定されていると、ダブルクリックはプレビューではなくそのアプリを開く**ので GD-Peeker は起動しない(起動しないのが正しい)。テスト用アカウントでは既定アプリを外しておく。実機 E2E はこのケースを ⚠️ として数え、失敗にはしない
 - **ブランド版 Chrome 137+ は `--load-extension` 不可**の罠あり。実機確認は `chrome://extensions` のデベロッパーモードで `extension/` を読み込む(手順は [docs/usage.md](docs/usage.md))
 - 隔離 E2E(上の 5 本)は Drive 本体にアクセスしない。**本物の Drive に対する確認は専用プロファイル**で行う: `bash scripts/drive-profile.sh` で Chrome for Testing を `~/.gd-peeker/profile` で素起動し、テスト用 Google アカウントで一度ログインして閉じる → 以後 `scripts/drive-inspect.mjs`(調査)と `tests/e2e-drive.mjs`(実機 E2E、作成予定)がそのプロファイルを Playwright から使う。プロファイルはリポ外(`.gitignore` 済み)。**2026-09-10 千田の判断で hmw.gr.jp 本アカウントでログイン済み。自動操作の読み書きは Drive フォルダ `1DkhF-K_7FymE8hWRNh8ehvEnS16rBvhW`(GD-Peeker-dev)の中だけ**に限る。フォルダ外のファイル・フォルダに触らない(一覧の閲覧も my-drive ではなくこのフォルダ URL を開く)。mock keychain なので作業が終わったら `rm -rf ~/.gd-peeker/profile` を勧める
 - **実機で判明した Drive の挙動(2026-09-09/10)**: 一覧でのダブルクリックは URL も title も変えず、fileId 入りの iframe も出ない。代わりに `…/file/u/0/d/<id>/docos/p/sync` と `drivesharing/clientmodel?id=<id>` が飛ぶ(SPEC §3.1)。`/file/d/<id>/view` になるのは「新しいタブで開く」のときだけ。手動(アイコン)経路と Cookie 同送 fetch は実機で動作確認済み

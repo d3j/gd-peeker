@@ -108,6 +108,61 @@ export async function fetchDriveFile(fileId, { nameHint = '', driveTabId = null 
   throw new DriveFetchError('drive-fetch-failed', attempts);
 }
 
+export async function sniffDriveFile(fileId) {
+  const url = `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}`;
+  const first = await sniffUrl(url);
+  if (first.ok || !first.confirmUrl) return first;
+  // Google の「ウイルス スキャンに関する警告」ページ(xml 等は小さくても出る)。フォームの
+  // confirm/uuid/at を拾って 1 回だけ再試行する(viewer 側の fetchDriveFile と同じ扱い)
+  const second = await sniffUrl(first.confirmUrl);
+  second.retryOf = url;
+  return second;
+}
+
+async function sniffUrl(url) {
+  const controller = new AbortController();
+  try {
+    const response = await fetch(url, {
+      credentials: 'include',
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+    const contentType = response.headers.get('content-type') ?? '';
+    const disposition = response.headers.get('content-disposition') ?? '';
+    const fileName = parseContentDisposition(disposition) || '';
+    const isHtml = contentType.toLowerCase().includes('text/html');
+    // ヘッダだけで足りるときは本文を捨てる。HTML(警告/ログインページ)のときだけ本文を読んで confirm フォームを探す
+    const textProbe = isHtml && !fileName ? (await response.text()).slice(0, 256 * 1024) : '';
+    if (!textProbe) controller.abort();
+    const confirmUrl = response.ok && textProbe ? findConfirmUrl(textProbe, response.url) : null;
+    const googleHtml = isGoogleDriveHtmlPage({ url: response.url, contentType, text: textProbe }) || (isHtml && !fileName);
+    const result = {
+      ok: response.ok && Boolean(fileName) && !googleHtml,
+      fileName,
+      contentType,
+      status: response.status,
+      finalUrl: response.url,
+      confirmUrl,
+      error: null,
+    };
+    if (!response.ok) result.error = `http-${response.status}`;
+    else if (confirmUrl) result.error = 'confirm-page';
+    else if (googleHtml) result.error = 'google-drive-html';
+    else if (!fileName) result.error = 'no-filename';
+    return result;
+  } catch (err) {
+    return {
+      ok: false,
+      fileName: '',
+      contentType: '',
+      status: null,
+      finalUrl: '',
+      confirmUrl: null,
+      error: err?.message ?? String(err),
+    };
+  }
+}
+
 async function tryFetchUrl(url, attempts) {
   const first = await requestUrl(url, attempts);
   if (first.ok || !first.confirmUrl) return first;

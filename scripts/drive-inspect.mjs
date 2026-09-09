@@ -37,12 +37,26 @@ if (!existsSync(PROFILE)) {
   process.exit(1);
 }
 
+// 永続プロファイルでは Chrome が拡張の service worker スクリプトをキャッシュし、ディスク上の
+// background.js が更新されていても古いものが動き続ける(2026-09-10 に実機で確認)。起動直後に
+// 拡張をリロードして、いまのコードで service worker を起動し直す。
+async function freshServiceWorker(ctx) {
+  let [sw] = ctx.serviceWorkers();
+  if (!sw) sw = await ctx.waitForEvent('serviceworker', { timeout: 10000 });
+  const next = ctx.waitForEvent('serviceworker', { timeout: 15000 });
+  await sw.evaluate(() => chrome.runtime.reload()).catch(() => {});
+  sw = await next;
+  await new Promise((r) => setTimeout(r, 1000));
+  return sw;
+}
+
 const ctx = await chromium.launchPersistentContext(PROFILE, {
   headless: false,
   executablePath: findChrome(),
   ignoreDefaultArgs: ['--enable-automation'], // keep Playwright's --use-mock-keychain: drive-profile.sh logs in with the same flag so cookies decrypt here
   args: ['--disable-blink-features=AutomationControlled', `--disable-extensions-except=${EXT_DIR}`, `--load-extension=${EXT_DIR}`],
 });
+const sw0 = await freshServiceWorker(ctx);
 const logs = [];
 const page = ctx.pages()[0] ?? (await ctx.newPage());
 page.on('console', (m) => { if (m.text().includes('[GD-Peeker]')) logs.push(`[page] ${m.text()}`); });

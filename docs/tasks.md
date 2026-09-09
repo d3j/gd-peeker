@@ -45,18 +45,21 @@
 - [x] SPEC §11 のうち機械確認できる項目(unit/E2E 全パス・外部参照なし・permissions/host_permissions・docs 3 点)は充足。残りは下の「実機確認」(Drive 実機でのダブルクリック・アイコン・Shift_JIS)
 
 ### M6 自動起動の再設計 — webRequest 観測 + header sniff(SPEC §3.1/§3.2 改訂版)
-- [ ] manifest に `webRequest`(観測のみ)。background で `onBeforeRequest`(2 パターン)→ 10 秒デデュープ → `sniffDriveFile` → 種別判定 → viewer
-- [ ] `lib/drivefetch.js` に `sniffDriveFile(fileId)`(GET + ヘッダ受信で abort、`{fileName, contentType, ok, attempts}`)
-- [ ] `previewByTab` と `openedByDriveTab` を `chrome.storage.session` へ。content.js は fileId だけ送る(`drive:title?` 廃止)
-- [ ] アイコン: URL 一致 → previewByTab(30 分以内)→ options。バッジも同基準
-- [ ] unit: webRequest URL → fileId 抽出、sniff の判定(HTML ページ/Content-Disposition 無し/対象外拡張子)
-- [ ] `tests/e2e-drive.mjs`(実機、フォルダ 1DkhF… の中だけ)4 形式 + previewByTab 確認
-- [ ] docs/usage.md の実機確認手順を「ダブルクリックで開く」に合わせて更新、store-listing の権限正当化に webRequest を追加
+- [x] manifest に `webRequest`(観測のみ)。background で `onBeforeRequest`(2 パターン)→ 10 秒デデュープ → `sniffDriveFile` → 種別判定 → viewer
+- [x] `lib/drivefetch.js` に `sniffDriveFile(fileId)`(GET + ヘッダ受信で abort、`{fileName, contentType, ok, status, finalUrl, error}`)
+- [x] `previewByTab` と `openedByDriveTab` を `chrome.storage.session` へ。content.js は fileId だけ送る(`drive:title?` 廃止)
+- [x] アイコン: URL 一致 → previewByTab(30 分以内)→ options。バッジも同基準
+- [x] unit: webRequest URL → fileId 抽出、sniff の判定(HTML ページ/Content-Disposition 無し/HTTP 403)
+- [x] `tests/e2e-drive.mjs`(実機、フォルダ 1DkhF… の中だけ)4 形式 + previewByTab 確認
+- [x] docs/usage.md の実機確認手順を「ダブルクリックで開く」に合わせて更新、store-listing の権限正当化に webRequest を追加
+- Codex の解釈(採用): `previewByTab` は自動オープン対象外でも手動アイコンの根拠になるため、sniff が成功しファイル名が取れた時点で保存する。`autoOpen` / `autoOpenTypes` は viewer を自動で開くかどうかだけに効かせる。`sniffDriveFile` はヘッダ受信後に本文を読まず abort するため、Google HTML 判定は `accounts.google.com` 最終 URL、または `text/html` かつ `Content-Disposition` ファイル名なしを失敗扱いにする
+- レビューで直したもの(2026-09-10): 永続プロファイルが古い service worker をキャッシュしていて webRequest リスナが無かった → ハーネスが起動直後に `chrome.runtime.reload()`(`freshServiceWorker`)/ xml は小さくても Google の「ウイルス スキャンに関する警告」ページに当たり sniff が `text/html` で失敗していた → sniff も本文を読んで confirm フォームで 1 回再試行 / このアカウントは `.md`/`.txt` の既定アプリが StackEdit で、ダブルクリックが Drive のプレビューではなく StackEdit を開く → 実機 E2E は ⚠️ で記録し `/file/d/<id>/view` 経路で描画を検証
+- テスト(2026-09-10、Claude 実行): unit 33/33、隔離 E2E 46/46、**実機 E2E 15/15**(html/xml はダブルクリック自動起動、md/Shift_JIS txt は view 経路)
 
 ## 実機確認
 - [x] 「アプリで開く → 新しいタブで開く」+ アイコンクリックで html が描画された(2026-09-09 千田)= **Cookie 同送 fetch は通る**
 - [x] 一覧ダブルクリックの調査(2026-09-10、専用プロファイル + hmw アカウント、フォルダ GD-Peeker-dev 内): URL/title 不変、fileId 入り iframe 無し、**通信に fileId が乗る**(`docos/p/sync`、`drivesharing/clientmodel`)→ M6 へ
-- [ ] 自分の Drive で html / md / Shift_JIS txt / xml をダブルクリック → 期待どおり
+- [x] GD-Peeker-dev フォルダで html / xml のダブルクリック → 自動起動 → 描画(2026-09-10、実機 E2E)。md / txt は既定アプリ StackEdit に取られるため view 経路で描画確認。**ダブルクリック経路で md/txt も見るには、このアカウントの `.md`/`.txt` の既定アプリを外す必要がある(千田判断)**
 - [ ] 共有された他人のファイル(閲覧権限のみ)でも取れるか
 - [ ] hmw.gr.jp アカウント(Workspace)と gmail アカウントの両方で取れるか(`authuser` 複数ログイン時の挙動)
 - [ ] `drivefetch` のどの段で成功したかを記録して docs/usage.md に反映

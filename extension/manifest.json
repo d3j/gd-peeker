@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "description": "Open .html, .md, .txt and .xml files from Google Drive™ as rendered pages in a new tab. No server, no sign-in, nothing leaves your browser.",
   "minimum_chrome_version": "120",
-  "permissions": ["storage"],
+  "permissions": ["storage", "webRequest"],
   "host_permissions": [
     "https://drive.google.com/*",
     "https://drive.usercontent.google.com/*",

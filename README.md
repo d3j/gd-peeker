@@ -8,12 +8,13 @@ Google Drive に置いた `.html` / `.md` / `.txt` / `.xml` を、Drive 上で�
 - **サーバ無し・OAuth 無し・データ送信ゼロ。** ファイル本文はユーザー自身の Drive セッションで取得し、ブラウザの中だけで描画する
 - HTML は `allow-same-origin` を持たない sandboxed iframe で「動かすが隔離する」(サニタイズで殺さない)
 
-## 現在の状態(2026-09-09)
+## 現在の状態(2026-09-10)
 
-- v0.1.0 実装完了。Drive のプレビュー URL から viewer を開き、HTML / Markdown / txt / XML / code を種別ごとに描画する。HTML は隔離 sandbox、Markdown はサニタイズ、txt は Shift_JIS を含む文字コード自動判定、XML は整形・折りたたみに対応
+- v0.1.0 M6 まで実装完了。Drive 一覧のダブルクリックで発生する preview 通信を `webRequest` で観測し、header sniff でファイル名と種別を決めて HTML / Markdown / txt / XML を viewer で開く。HTML は隔離 sandbox、Markdown はサニタイズ、txt は Shift_JIS を含む文字コード自動判定、XML は整形・折りたたみに対応
 - 設定画面は自動起動、HTML、Markdown、テキスト、文字コード、表示言語の全項目を編集でき、変更は開いている viewer に反映される
-- テスト: unit 25/25、E2E 46/46(html 9・md 9・text 8・settings 14・fetch failure 6。Chrome for Testing で実行)
-- 実機: アイコン経路と Cookie 同送 fetch は動作確認済み(2026-09-09)。一覧ダブルクリックの自動起動は webRequest 観測方式へ再設計中(M6)。Chrome ウェブストアは未公開
+- テスト(2026-09-10): unit 33/33、隔離 E2E 46/46(html 9・md 9・text 8・settings 14・fetch failure 6)、**実機 E2E 15/15**(本物の Drive で html/xml をダブルクリック → 自動起動 → 描画。md/Shift_JIS txt はテストアカウントの既定アプリが StackEdit のため `/file/d/<id>/view` 経路で描画確認)
+- 既知の挙動: Drive 側で拡張子に既定アプリが設定されていると、ダブルクリックはプレビューではなくそのアプリを開くので GD-Peeker は起動しない(正しい挙動)。xml など一部の形式は小さくても Google の「ウイルス スキャンに関する警告」ページを挟むが、confirm フォームを 1 回たどって取得する
+- Chrome ウェブストアは未公開
 
 ## 名前の由来
 
