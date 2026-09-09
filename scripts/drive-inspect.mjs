@@ -40,7 +40,7 @@ if (!existsSync(PROFILE)) {
 const ctx = await chromium.launchPersistentContext(PROFILE, {
   headless: false,
   executablePath: findChrome(),
-  ignoreDefaultArgs: ['--enable-automation'],
+  ignoreDefaultArgs: ['--enable-automation'], // keep Playwright's --use-mock-keychain: drive-profile.sh logs in with the same flag so cookies decrypt here
   args: ['--disable-blink-features=AutomationControlled', `--disable-extensions-except=${EXT_DIR}`, `--load-extension=${EXT_DIR}`],
 });
 const logs = [];

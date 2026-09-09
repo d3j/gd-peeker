@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Chrome for Testing を「GD-Peeker 実機テスト専用プロファイル」で素のまま起動する。
 # 自動化フラグを付けずに起動するので、この窓で Google にログインすれば弾かれない。
-# ログイン後は窓を閉じるだけ。以後 tests/e2e-drive.mjs と scripts/drive-inspect.mjs が
+# ログイン後は Cmd+Q で終了する(Cookie がディスクに書かれる)。
+# --use-mock-keychain は Playwright の既定と揃えるため(揃えないと片方が書いた Cookie をもう片方が復号できず捨てる)。以後 tests/e2e-drive.mjs と scripts/drive-inspect.mjs が
 # 同じプロファイル(~/.gd-peeker/profile)を Playwright から使う。
 #
 #   bash scripts/drive-profile.sh            # 起動(拡張も読み込み済み)
@@ -30,6 +31,7 @@ echo "この窓でテスト用 Google アカウントにログインし、Drive 
 exec "$CHROME" \
   --user-data-dir="$PROFILE" \
   --no-first-run --no-default-browser-check \
+  --use-mock-keychain \
   --disable-extensions-except="$ROOT/extension" \
   --load-extension="$ROOT/extension" \
   "https://drive.google.com/drive/my-drive"
