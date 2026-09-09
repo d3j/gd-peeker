@@ -1,6 +1,7 @@
 const user = document.querySelector('#user');
 
 window.addEventListener('message', (event) => {
+  if (event.source !== window.parent) return; // the user iframe (null origin) must not re-render itself with looser options
   const message = event.data;
   if (message?.type !== 'render') return;
   try {

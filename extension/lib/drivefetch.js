@@ -205,37 +205,6 @@ function buildResult(result, fileId, nameHint, attempts) {
   };
 }
 
-export async function fetchFromContentScript(fileId) {
-  const url = `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}`;
-  const response = await fetch(url, { credentials: 'include', redirect: 'follow' });
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (bytes.byteLength > MAX_RELAY_BYTES) return { ok: false, error: 'too-large', status: response.status };
-  const contentType = response.headers.get('content-type') ?? '';
-  const disposition = response.headers.get('content-disposition') ?? '';
-  const textProbe = contentType.toLowerCase().includes('text/html')
-    ? new TextDecoder('utf-8', { fatal: false }).decode(bytes.slice(0, 256 * 1024))
-    : '';
-  if (!response.ok || isGoogleDriveHtmlPage({ url: response.url, contentType, text: textProbe })) {
-    return { ok: false, error: response.ok ? 'google-drive-html' : `http-${response.status}`, status: response.status };
-  }
-  return {
-    ok: true,
-    status: response.status,
-    finalUrl: response.url,
-    contentType,
-    contentDisposition: disposition,
-    base64: bytesToBase64(bytes),
-  };
-}
-
-function bytesToBase64(bytes) {
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  }
-  return btoa(binary);
-}
-
 function base64ToBytes(base64) {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);

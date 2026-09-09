@@ -27,7 +27,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' || changeInfo.url || tab.url) updateAction(tabId, tab.url || changeInfo.url);
+  if (changeInfo.status === 'complete' || changeInfo.url) updateAction(tabId, tab.url || changeInfo.url);
 });
 
 chrome.tabs.onActivated.addListener(async ({ tabId }) => {
@@ -61,6 +61,7 @@ async function handlePreview(message, driveTab) {
   }
   if (!nameHint) return { ok: true, skipped: 'no-title' };
   const detected = detectFileType({ name: nameHint });
+  if (!detected.ext) return { ok: true, skipped: 'no-extension' }; // unknown blobs must not auto-open (manual open still works)
   if (!isAutoOpenKind(detected.kind, settings)) return { ok: true, skipped: 'not-target' };
   return openViewer({ driveTab, fileId: message.fileId, nameHint, manual: false });
 }

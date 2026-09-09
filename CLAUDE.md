@@ -15,14 +15,15 @@ GD-Peeker — Google Drive 上の html/md/txt/xml を別タブでレンダリン
 - **UI 文字列は `extension/lib/messages.js` の `t(key, params)` 経由**(直書き禁止)。既定言語は en、`chrome.storage.local` の `uiLang` で ja に切替(`chrome.i18n` は実行時切替不可のため不使用)
 - **本体にテスト用分岐を入れない。** E2E は Playwright の route / fixture で外から差し替える
 - 設定のキーとデフォルト値は `extension/lib/settings.js` の一箇所で定義する(viewer・options・background で複製しない)
-- 自動起動は **同一タブ・同一 fileId で二重起動しない**(content script が最後に開いた id を保持)。Drive のプレビューを閉じて別ファイルを開いたときだけ再発火する
+- 自動起動は **同一タブ・同一 fileId で二重起動しない**(content script が最後に開いた id を保持し、プレビュー URL から離れたら解除する。background の Map は既存 viewer タブへフォーカスするだけ)。**拡張子の無いファイル名は自動起動しない**(バイナリ誤爆防止。手動は開ける)
+- **sandbox ページは `event.source === window.parent` 以外の `render` を無視する**(ユーザー iframe が自分を緩い設定で再描画させる経路を塞ぐ。E2E の項目 4 が回帰テスト)
 
 ## テストの実行方法
 
 ```sh
 node --test tests/unit/            # lib/* の単体テスト(encoding / filetype / xmlformat / md pipeline)
 cd <任意の作業ディレクトリ> && npm i playwright-core
-node ~/Code/gd-peeker/tests/e2e-viewer-html.mjs   # viewer: html を sandbox で描画・スクリプト実行・隔離
+node ~/Code/gd-peeker/tests/e2e-viewer-html.mjs   # 9項目(html: sandbox 描画・スクリプト実行/禁止・外部リソース CSP・null origin・title 返却・子 iframe からの render 乗っ取り拒否)
 node ~/Code/gd-peeker/tests/e2e-viewer-md.mjs     # viewer: md 描画・DOMPurify・mermaid・hljs
 node ~/Code/gd-peeker/tests/e2e-viewer-text.mjs   # viewer: txt(Shift_JIS 自動判定)/ xml 整形・折りたたみ
 node ~/Code/gd-peeker/tests/e2e-settings.mjs      # options: 設定永続化・言語切替

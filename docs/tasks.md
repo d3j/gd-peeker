@@ -4,14 +4,17 @@
 
 ## v0.1.0
 
-### M1 骨格 + HTML
-- [ ] manifest / background / content / viewer / sandbox / options の空実装と配線(SPEC §2, §3)
-- [ ] `lib/settings.js`・`lib/messages.js`(en/ja)
-- [ ] `lib/drivefetch.js` 3 段ストラテジー + 診断 `attempts[]` + Content-Disposition 解析(SPEC §4)
-- [ ] html 描画: sandbox → srcdoc iframe(`allow-same-origin` 無し)、allowScripts / allowExternal(meta CSP)、`<base target=_blank>`(SPEC §5.2)
-- [ ] 自動起動(URL 監視・二重起動防止・対象形式判定)+ アイコンクリック(バッジ・設定への分岐)
-- [ ] icons(svg → png)
-- [ ] unit: drivefetch の解析、filetype / E2E: e2e-viewer-html.mjs
+### M1 骨格 + HTML — 完了(2026-09-09、Codex 実装 + Claude レビュー)
+- [x] manifest / background / content / viewer / sandbox / options の空実装と配線(SPEC §2, §3)
+- [x] `lib/settings.js`・`lib/messages.js`(en/ja)
+- [x] `lib/drivefetch.js` 3 段ストラテジー + 診断 `attempts[]` + Content-Disposition 解析(SPEC §4)
+- [x] html 描画: sandbox → srcdoc iframe(`allow-same-origin` 無し)、allowScripts / allowExternal(meta CSP)、`<base target=_blank>`(SPEC §5.2)
+- [x] 自動起動(URL 監視・二重起動防止・対象形式判定)+ アイコンクリック(バッジ・設定への分岐)
+- [x] icons(svg → png)
+- [x] unit 9 件 / E2E e2e-viewer-html.mjs 9 項目
+- レビューで直したもの: sandbox が子 iframe からの `render` を受け付けていた(緩い設定で再描画できる穴)/ 同じファイルを閉じて開き直しても自動起動しなかった / 拡張子なしのファイルが txt として自動起動していた / 未使用の `fetchFromContentScript` を削除
+- Codex の解釈(採用): 5MB 超の確認は M4 へ / 拡張子なしは MIME より SPEC 表を優先(→レビューで自動起動対象から外した)
+- 既知の限界: background の二重起動防止 Map は service worker の再起動で消える(手動クリックで同じファイルの viewer が 2 枚開きうる)。v0.2 候補に `chrome.storage.session` 化を記載
 
 ### M2 Markdown
 - [ ] `scripts/vendor.mjs` + `scripts/package.json`(esbuild、バージョン固定)→ `vendor/md-runtime.js`, `vendor/mermaid.js`, テーマ css, `VERSIONS.md`, `LICENSES.txt`(SPEC §8)
@@ -43,6 +46,7 @@
 - [ ] `drivefetch` のどの段で成功したかを記録して docs/usage.md に反映
 
 ## v0.2 以降(候補)
+- background の二重起動防止 Map を `chrome.storage.session` に置く(service worker 再起動で消える問題)
 - csv / tsv のテーブル表示(ソート・列固定)
 - KaTeX(md 数式)
 - md の相対画像参照(同じ Drive フォルダ内の画像を取りに行く。要 Drive 一覧 API → OAuth が要るため慎重に)

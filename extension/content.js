@@ -31,7 +31,10 @@ function checkLocation() {
   if (href === lastHref) return;
   lastHref = href;
   const match = parseDrivePreviewUrl(href);
-  if (!match) return;
+  if (!match) {
+    lastSentFileId = ''; // preview closed: the same file may be opened again later
+    return;
+  }
   if (match.fileId === lastSentFileId) return;
   lastSentFileId = match.fileId;
   chrome.runtime.sendMessage({

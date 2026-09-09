@@ -63,6 +63,12 @@ const html = `<!doctype html>
   </body>
 </html>`;
 
+const hijackHtml = `<!doctype html><title>Hijack</title><body><h1 id="headline">Hijack</h1><script>
+  parent.postMessage({ type: 'render', kind: 'html', html: '<p id="hijacked">looser</p>', options: { html: { allowScripts: true, allowExternal: true } } }, '*');
+  const p = document.createElement('p'); p.id = 'sent'; p.textContent = 'sent'; document.body.append(p);
+</script></body>`;
+const PIXEL_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+
 const blockedHtml = `<!doctype html><title>Scripts disabled</title><body><h1 id="headline">No script</h1><script>document.body.dataset.scriptRan='yes';</script></body>`;
 
 const ctx = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'gd-peeker-e2e-')), {
@@ -84,11 +90,15 @@ try {
         'content-type': 'text/html; charset=utf-8',
         'content-disposition': `attachment; filename="${id === 'no-script' ? 'no-script.html' : 'test-html.html'}"`,
       },
-      body: id === 'no-script' ? blockedHtml : html,
+      body: id === 'no-script' ? blockedHtml : id === 'hijack' ? hijackHtml : html,
     });
   });
   await ctx.route('https://drive.usercontent.google.com/**', async (route) => {
     await route.fulfill({ status: 500, body: 'unused' });
+  });
+  // a real pixel, so that "blocked" in test 3 means CSP blocked it (not a DNS failure)
+  await ctx.route('https://example.test/pixel.png', async (route) => {
+    await route.fulfill({ status: 200, headers: { 'content-type': 'image/png' }, body: PIXEL_PNG });
   });
 
   console.log('1. HTML renders in nested sandbox and scripts execute by default');
@@ -115,6 +125,9 @@ try {
   assert((await user.locator('body').getAttribute('data-parent-chrome')) !== 'true', 'inner iframe cannot read parent.chrome');
   await page.waitForFunction(() => document.title === 'Fixture HTML — GD-Peeker', null, { timeout: 5000 });
   assert((await page.title()) === 'Fixture HTML — GD-Peeker', 'title returned from sandbox updates viewer title');
+  await page.waitForTimeout(500);
+  const allowedImage = await user.locator('#external').evaluate((img) => img.complete && img.naturalWidth > 0);
+  assert(allowedImage, 'external image loads when allowExternal=true');
 
   console.log('2. allowScripts=false removes script execution');
   await sw.evaluate(() =>
@@ -158,6 +171,15 @@ try {
   await noExternalUser.locator('#ran').waitFor({ timeout: 5000 });
   const imageLoaded = await noExternalUser.locator('#external').evaluate((img) => img.complete && img.naturalWidth > 0);
   assert(!imageLoaded, 'external image is blocked');
+
+  console.log('4. user iframe cannot re-render itself with looser options');
+  const hijack = await ctx.newPage();
+  await hijack.goto(`chrome-extension://${extId}/viewer.html?id=hijack`);
+  const hijackUser = hijack.frameLocator('#sandbox').frameLocator('#user');
+  await hijackUser.locator('#sent').waitFor({ timeout: 5000 });
+  await hijack.waitForTimeout(500);
+  assert((await hijackUser.locator('#hijacked').count()) === 0, 'render message from the user iframe is ignored');
+  assert((await hijackUser.locator('#sent').count()) === 1, 'original document is still in place');
 } finally {
   await ctx.close();
 }
