@@ -227,6 +227,6 @@ tabflock の `messages.js` と同じ形(`t(key, params)`、`{en:{...}, ja:{...}}
 - [ ] 拡張アイコンのクリックでプレビュー画面から同じ viewer が開き、それ以外の画面では options が開く
 - [ ] Shift_JIS の日本語 txt が自動判定で読める
 - [ ] `node --test tests/unit/` 全パス、E2E 全パス(件数を CLAUDE.md に記載)
-- [ ] `extension/` 配下に `https://` のスクリプト/スタイル参照が無い(`grep -r "https://" extension --include=*.html --include=*.js | grep -v vendor` が空。vendor 内のライブラリ由来文字列は除く)
+- [ ] `extension/` 配下に外部のスクリプト/スタイル参照が無い。確認コマンドは `grep -rn "https://" extension --include='*.html' --include='*.js' --include='*.css' | grep -v "^extension/vendor/" | grep -vE "drive\.google\.com|drive\.usercontent|googleusercontent|accounts\.google"` が空であること。**Drive のダウンロード URL は本文取得に必要な文字列であり対象外。URL を文字列連結で分割して grep を逃れるような変更はしない**(2026-09-09 に一度そうされ、レビューで戻した)
 - [ ] `manifest.json` の permissions が `storage` のみ、host_permissions が 3 つのみ
 - [ ] docs/usage.md・docs/store-listing.md・PRIVACY.md がある

@@ -90,7 +90,8 @@ async function openViewer({ driveTab, fileId, nameHint, manual }) {
 }
 
 async function relayFetch({ fileId, driveTabId }) {
-  const numericTabId = Number(driveTabId);
+  // Number(null) is 0, which would look like a valid tab id
+  const numericTabId = driveTabId == null || driveTabId === '' ? NaN : Number(driveTabId);
   if (!fileId || !Number.isFinite(numericTabId)) return { ok: false, error: 'no-drive-tab' };
   try {
     return await chrome.tabs.sendMessage(numericTabId, { type: 'drive:fetch', fileId });

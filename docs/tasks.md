@@ -30,17 +30,19 @@
 - [x] unit: encoding(各エンコーディングの fixture)/ xmlformat / E2E: e2e-viewer-text.mjs 8 項目
 - Codex の解釈(採用): xmlformat の unit は Node に DOMParser が無いため同一 API 内の Node 用 tokenizer 経路を検証(ブラウザでは DOMParser 経路)
 
-### M4 設定画面 + 仕上げ
-- [ ] options.html(SPEC §6 の全項目、即時保存、既定に戻す、onChanged で viewer 再描画)
-- [ ] 初回 HTML 通知、5MB 超の確認、ソース表示トグル、ソースコピー
-- [ ] E2E: e2e-settings.mjs、fetch 失敗時の診断パネル
+### M4 設定画面 + 仕上げ — 完了(2026-09-09、Codex 実装 + Claude レビュー)
+- [x] options.html(SPEC §6 の全項目、即時保存、既定に戻す、onChanged で viewer 再描画)
+- [x] 初回 HTML 通知、5MB 超の確認、ソース表示トグル、ソースコピー
+- [x] E2E: e2e-settings.mjs 14 項目、e2e-fetch-failure.mjs 6 項目
+- レビューで直したもの: background の `relayFetch` が `Number(null)=0` を有効なタブ id と見なし、driveTabId 無しのときに `no-drive-tab` ではなく「No tab with id 0」になっていた(fetch failure E2E が 5/6 で検出)/ Codex が SPEC §11 の grep を空にするため Drive URL を `'https:' + '//'` に分割していた → 元に戻し、§11 の確認コマンドを Drive ホスト除外の形に直した(**チェックを逃れる変更は禁止**と明記)
+- Codex の解釈(採用): 5MB 超の確認はサイズ判定に本文が要るため「fetch 後・decode/render 前」/ fetch failure は別ファイル
 
-### M5 ドキュメント・ストア準備
-- [ ] docs/usage.md(インストール・使い方・**実機確認手順**・既知の制限)
-- [ ] docs/store-listing.md(説明文 英/日・権限の正当化・データ利用申告・スクショ一覧)
-- [ ] PRIVACY.md(英/日)
-- [ ] README「現在の状態」更新、CLAUDE.md に E2E 件数を記載
-- [ ] SPEC §11 の完了チェックをすべて満たす
+### M5 ドキュメント・ストア準備 — 完了(2026-09-09)
+- [x] docs/usage.md(インストール・使い方・**実機確認手順**・既知の制限)
+- [x] docs/store-listing.md(説明文 英/日・権限の正当化・データ利用申告・スクショ一覧)
+- [x] PRIVACY.md(英/日)
+- [x] README「現在の状態」更新、CLAUDE.md に E2E 件数を記載
+- [x] SPEC §11 のうち機械確認できる項目(unit/E2E 全パス・外部参照なし・permissions/host_permissions・docs 3 点)は充足。残りは下の「実機確認」(Drive 実機でのダブルクリック・アイコン・Shift_JIS)
 
 ## 実機確認(開発者=千田が行う)
 - [ ] 自分の Drive で html / md / Shift_JIS txt / xml をダブルクリック → 期待どおり

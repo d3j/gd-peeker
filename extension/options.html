@@ -14,6 +14,7 @@
         <button id="reset" type="button" data-i18n="resetDefaults"></button>
       </header>
       <section>
+        <h2 data-i18n="autoOpenSection"></h2>
         <label><input id="autoOpen" type="checkbox"> <span data-i18n="autoOpen"></span></label>
         <fieldset>
           <legend data-i18n="autoOpenTypes"></legend>
@@ -26,8 +27,8 @@
       </section>
       <section>
         <h2 data-i18n="html"></h2>
-        <label><input id="allowScripts" type="checkbox"> <span data-i18n="scripts"></span></label>
-        <label><input id="allowExternal" type="checkbox"> <span data-i18n="externalResources"></span></label>
+        <label><input id="allowScripts" type="checkbox"> <span data-i18n="htmlAllowScripts"></span></label>
+        <label><input id="allowExternal" type="checkbox"> <span data-i18n="htmlAllowExternal"></span></label>
       </section>
       <section>
         <h2 data-i18n="markdown"></h2>
@@ -47,17 +48,17 @@
         <label>
           <span data-i18n="mdTheme"></span>
           <select id="mdTheme">
-            <option value="github">GitHub</option>
-            <option value="plain">Plain</option>
-            <option value="serif">Serif</option>
+            <option value="github" data-i18n="mdGithub"></option>
+            <option value="plain" data-i18n="mdPlain"></option>
+            <option value="serif" data-i18n="mdSerif"></option>
           </select>
         </label>
         <label>
           <span data-i18n="mdColorScheme"></span>
           <select id="mdColorScheme">
-            <option value="auto">Auto</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
+            <option value="auto" data-i18n="encodingAuto"></option>
+            <option value="light" data-i18n="light"></option>
+            <option value="dark" data-i18n="dark"></option>
           </select>
         </label>
       </section>
@@ -68,21 +69,24 @@
         <label><span data-i18n="fontSize"></span><input id="fontSize" type="number" min="10" max="24" step="1"></label>
       </section>
       <section>
-        <h2 data-i18n="settings"></h2>
+        <h2 data-i18n="charsetSection"></h2>
         <label>
           <span data-i18n="charset"></span>
           <select id="encoding">
-            <option value="auto">Auto</option>
+            <option value="auto" data-i18n="encodingAuto"></option>
             <option value="utf-8">UTF-8</option>
             <option value="shift_jis">Shift_JIS</option>
             <option value="euc-jp">EUC-JP</option>
           </select>
         </label>
+      </section>
+      <section>
+        <h2 data-i18n="uiSection"></h2>
         <label>
           <span data-i18n="uiLang"></span>
           <select id="uiLang">
-            <option value="en">English</option>
-            <option value="ja">日本語</option>
+            <option value="en" data-i18n="languageEnglish"></option>
+            <option value="ja" data-i18n="languageJapanese"></option>
           </select>
         </label>
       </section>

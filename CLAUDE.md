@@ -28,8 +28,11 @@ cd <任意の作業ディレクトリ> && npm i playwright-core
 node ~/Code/gd-peeker/tests/e2e-viewer-html.mjs   # 9項目(html: sandbox 描画・スクリプト実行/禁止・外部リソース CSP・null origin・title 返却・子 iframe からの render 乗っ取り拒否)
 node ~/Code/gd-peeker/tests/e2e-viewer-md.mjs     # 9項目(md: GFM 表/タスク/脚注・script 除去と不実行・front matter・hljs・mermaid→svg・TOC)
 node ~/Code/gd-peeker/tests/e2e-viewer-text.mjs   # 8項目(Shift_JIS 自動判定と手動上書き / xml 整形・折りたたみ・不正 xml フォールバック / json 整形)
-node ~/Code/gd-peeker/tests/e2e-settings.mjs      # options: 設定永続化・言語切替
+node ~/Code/gd-peeker/tests/e2e-settings.mjs      # 14項目(options: 設定永続化・開いている viewer への反映・言語切替)
+node ~/Code/gd-peeker/tests/e2e-fetch-failure.mjs # 6項目(fetch 失敗: direct 403 / direct 500 / content-script no-drive-tab の診断・文言・操作ボタン)
 ```
+
+E2E 合計: 46項目(html 9 + md 9 + text 8 + settings 14 + fetch failure 6)。全 5 本 + unit 25 件が 2026-09-09 時点で Chrome for Testing でパス。
 
 - Chrome for Testing を ms-playwright キャッシュから自動検出(`CHROME_FOR_TESTING` で明示可)
 - **ブランド版 Chrome 137+ は `--load-extension` 不可**の罠あり。実機確認は `chrome://extensions` のデベロッパーモードで `extension/` を読み込む(手順は [docs/usage.md](docs/usage.md))

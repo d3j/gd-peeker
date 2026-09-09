@@ -4,6 +4,7 @@ import { decode, displayEncodingName } from './lib/encoding.js';
 import { loadSettings, onSettingsChanged } from './lib/settings.js';
 import { setLang, t } from './lib/messages.js';
 
+const LARGE_FILE_BYTES = 5 * 1024 * 1024;
 const params = new URLSearchParams(location.search);
 const fileId = params.get('id');
 const nameHint = params.get('name') || '';
@@ -22,6 +23,9 @@ const els = {
   sandbox: document.querySelector('#sandbox'),
   notice: document.querySelector('#notice'),
   noticeClose: document.querySelector('#notice-close'),
+  largeConfirm: document.querySelector('#large-confirm'),
+  largeOpen: document.querySelector('#large-open'),
+  largeSource: document.querySelector('#large-source'),
 };
 
 let settings = await loadSettings();
@@ -34,20 +38,29 @@ let current = {
   detected: { ext: '', language: null },
   decoding: null,
 };
+let sourceMode = false;
+let largeFileChoice = null;
 setLang(settings.uiLang);
 initControls();
 applyI18n();
 await render();
 
 els.reload.addEventListener('click', () => render());
-els.drive.addEventListener('click', () => chrome.tabs.create({ url: `https://drive.google.com/file/d/${fileId}/view` }));
-els.copy.addEventListener('click', async () => navigator.clipboard.writeText(current.text));
-els.source.addEventListener('click', () => renderSandbox('code'));
+els.drive.addEventListener('click', () => chrome.tabs.create({ url: driveViewUrl() }));
+els.copy.addEventListener('click', copySource);
+els.source.addEventListener('click', () => {
+  sourceMode = !sourceMode;
+  updateSourceControls();
+  renderSandbox(activeRenderKind());
+});
 els.options.addEventListener('click', () => chrome.runtime.openOptionsPage());
 els.kind.addEventListener('change', async () => {
+  sourceMode = false;
   current.kind = els.kind.value;
   await chrome.storage.session.set({ [`viewKind:${fileId}`]: current.kind });
-  renderSandbox(current.kind);
+  updateSourceControls();
+  await maybeShowHtmlNotice(current.kind);
+  renderSandbox(activeRenderKind());
 });
 els.encoding.addEventListener('change', async () => {
   await chrome.storage.session.set({ [`encoding:${fileId}`]: els.encoding.value });
@@ -57,15 +70,28 @@ els.noticeClose.addEventListener('click', async () => {
   els.notice.hidden = true;
   await chrome.storage.local.set({ htmlNoticeDismissed: true });
 });
+els.largeOpen.addEventListener('click', async () => {
+  largeFileChoice = 'open';
+  els.largeConfirm.hidden = true;
+  sourceMode = false;
+  await decodeAndRender();
+});
+els.largeSource.addEventListener('click', async () => {
+  largeFileChoice = 'source';
+  els.largeConfirm.hidden = true;
+  sourceMode = true;
+  await decodeAndRender();
+});
 els.sandbox.addEventListener('load', () => {
-  if (current.text) renderSandbox(current.kind);
+  if (current.text && els.largeConfirm.hidden) renderSandbox(activeRenderKind());
 });
 
 onSettingsChanged((next) => {
   settings = next;
   setLang(settings.uiLang);
   applyI18n();
-  renderSandbox(current.kind);
+  updateEncodingControl(els.encoding.value || settings.encoding.default || 'auto', current.decoding);
+  renderSandbox(activeRenderKind());
 });
 
 window.addEventListener('message', (event) => {
@@ -94,6 +120,13 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach((el) => {
     el.textContent = t(el.dataset.i18n);
   });
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAria));
+  });
+  for (const option of els.kind.options) option.textContent = t(option.value);
+  updateEncodingControl(els.encoding.value || settings.encoding.default || 'auto', current.decoding);
+  updateSourceControls();
+  document.documentElement.lang = settings.uiLang;
 }
 
 async function render() {
@@ -103,6 +136,7 @@ async function render() {
   }
   els.status.textContent = '';
   els.diagnostics.hidden = true;
+  els.largeConfirm.hidden = true;
   try {
     const result = await fetchDriveFile(fileId, { nameHint, driveTabId });
     const overrideData = await chrome.storage.session.get([`viewKind:${fileId}`, `encoding:${fileId}`]);
@@ -117,9 +151,17 @@ async function render() {
       detected,
       decoding: null,
     };
+    sourceMode = false;
+    largeFileChoice = result.bytes.byteLength > LARGE_FILE_BYTES ? null : 'open';
     els.fileName.textContent = current.fileName;
     els.kind.value = current.kind;
     document.title = `${current.fileName} — GD-Peeker`;
+    updateSourceControls();
+    if (!largeFileChoice) {
+      els.notice.hidden = true;
+      els.largeConfirm.hidden = false;
+      return;
+    }
     await decodeAndRender(overrideData);
   } catch (err) {
     showError(err.attempts || [{ strategy: 'fetch', error: err.message }]);
@@ -134,15 +176,18 @@ async function decodeAndRender(sessionData = null) {
   current.text = current.decoding.text;
   updateEncodingControl(selectedEncoding, current.decoding);
   await maybeShowHtmlNotice(current.kind);
-  renderSandbox(current.kind);
+  updateSourceControls();
+  renderSandbox(activeRenderKind());
 }
 
 function renderSandbox(kind) {
+  if (!current.text && !current.bytes) return;
+  if (!els.largeConfirm.hidden) return;
   els.sandbox.contentWindow.postMessage(
     {
       type: 'render',
       kind,
-      originalKind: kind,
+      originalKind: current.kind,
       text: current.text,
       html: current.text,
       options: {
@@ -159,12 +204,13 @@ function renderSandbox(kind) {
 
 function updateEncodingControl(selectedEncoding, result) {
   const autoOption = [...els.encoding.options].find((option) => option.value === 'auto');
-  if (autoOption) autoOption.textContent = `${displayEncodingName(result.encoding)} (auto)`;
+  if (autoOption) autoOption.textContent = result ? `${displayEncodingName(result.encoding)} (auto)` : t('encodingAuto');
   const values = new Set([...els.encoding.options].map((option) => option.value));
-  els.encoding.value = values.has(selectedEncoding) ? selectedEncoding : result.encoding;
+  els.encoding.value = values.has(selectedEncoding) ? selectedEncoding : result?.encoding || 'auto';
 }
 
 function showError(attempts) {
+  els.largeConfirm.hidden = true;
   els.status.textContent = t('errorFetch');
   els.diagnostics.hidden = false;
   const rows = attempts
@@ -175,7 +221,15 @@ function showError(attempts) {
         )}</td><td>${escapeHtml(a.contentType ?? '')}</td><td>${escapeHtml(a.finalUrl ?? a.url ?? '')}</td></tr>`
     )
     .join('');
-  els.diagnostics.innerHTML = `<h2>${escapeHtml(t('diagnosis'))}</h2><table><thead><tr><th>strategy</th><th>status</th><th>error</th><th>content-type</th><th>url</th></tr></thead><tbody>${rows}</tbody></table>`;
+  els.diagnostics.innerHTML = `<h2>${escapeHtml(t('diagnosis'))}</h2><table><thead><tr><th>${escapeHtml(
+    t('diagnosticsStrategy')
+  )}</th><th>${escapeHtml(t('diagnosticsStatus'))}</th><th>${escapeHtml(t('diagnosticsError'))}</th><th>${escapeHtml(
+    t('diagnosticsContentType')
+  )}</th><th>${escapeHtml(t('diagnosticsFinalUrl'))}</th></tr></thead><tbody>${rows}</tbody></table><p><button id="diag-drive" type="button">${escapeHtml(
+    t('driveOpen')
+  )}</button> <button id="diag-retry" type="button">${escapeHtml(t('retry'))}</button></p>`;
+  document.querySelector('#diag-drive')?.addEventListener('click', () => chrome.tabs.create({ url: driveViewUrl() }));
+  document.querySelector('#diag-retry')?.addEventListener('click', () => render());
 }
 
 async function maybeShowHtmlNotice(kind) {
@@ -185,6 +239,30 @@ async function maybeShowHtmlNotice(kind) {
   }
   const data = await chrome.storage.local.get('htmlNoticeDismissed');
   els.notice.hidden = Boolean(data.htmlNoticeDismissed);
+}
+
+function activeRenderKind() {
+  return sourceMode ? 'code' : current.kind;
+}
+
+function updateSourceControls() {
+  if (!els.source || !els.kind) return;
+  els.source.textContent = sourceMode ? t('showRendered') : t('source');
+  els.source.setAttribute('aria-pressed', sourceMode ? 'true' : 'false');
+  els.kind.value = sourceMode ? 'code' : current.kind;
+}
+
+async function copySource() {
+  await navigator.clipboard.writeText(current.text);
+  window.clearTimeout(copySource.timeout);
+  els.copy.textContent = t('copied');
+  copySource.timeout = window.setTimeout(() => {
+    els.copy.textContent = t('copySource');
+  }, 1200);
+}
+
+function driveViewUrl() {
+  return `https://drive.google.com/file/d/${encodeURIComponent(fileId)}/view`;
 }
 
 function escapeHtml(value) {

@@ -71,4 +71,5 @@ function applyI18n() {
     el.textContent = t(el.dataset.i18n);
   });
   document.title = t('optionsTitle');
+  document.documentElement.lang = settings.uiLang;
 }

@@ -10,8 +10,10 @@ Google Drive に置いた `.html` / `.md` / `.txt` / `.xml` を、Drive 上で�
 
 ## 現在の状態(2026-09-09)
 
-- 設計確定。実装は [docs/SPEC.md](docs/SPEC.md) を正として進行中(マイルストンは [docs/tasks.md](docs/tasks.md))
-- 実装は Codex に委譲、レビューは Claude(Fable)が行う
+- v0.1.0 実装完了。Drive のプレビュー URL から viewer を開き、HTML / Markdown / txt / XML / code を種別ごとに描画する。HTML は隔離 sandbox、Markdown はサニタイズ、txt は Shift_JIS を含む文字コード自動判定、XML は整形・折りたたみに対応
+- 設定画面は自動起動、HTML、Markdown、テキスト、文字コード、表示言語の全項目を編集でき、変更は開いている viewer に反映される
+- テスト: unit 25/25、E2E 46/46(html 9・md 9・text 8・settings 14・fetch failure 6。Chrome for Testing で実行)
+- 実機 Drive 確認は未実施。Chrome ウェブストアは未公開
 
 ## 名前の由来
 

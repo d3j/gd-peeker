@@ -10,7 +10,7 @@ body {
 
 body {
   display: grid;
-  grid-template-rows: 40px auto auto 1fr;
+  grid-template-rows: 40px auto auto auto 1fr;
   font: 13px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #202124;
   background: #f8fafd;
@@ -56,10 +56,22 @@ button {
 }
 
 #notice,
+#large-confirm,
 #status {
   padding: 8px 12px;
   border-bottom: 1px solid #dfe3ea;
   background: #fff8df;
+}
+
+#large-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#large-confirm[hidden] {
+  display: none;
 }
 
 #status:empty {
