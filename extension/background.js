@@ -46,6 +46,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 });
 
 async function handlePreview(message, driveTab) {
+  console.debug('[GD-Peeker] preview message', message, 'from tab', driveTab?.id);
   if (!driveTab?.id || !message.fileId) return { ok: false, error: 'no-tab' };
   const settings = await localizedSettings();
   if (!settings.autoOpen) return { ok: true, skipped: 'autoOpen-off' };

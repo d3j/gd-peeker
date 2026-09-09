@@ -31,17 +31,21 @@ function checkLocation() {
   if (href === lastHref) return;
   lastHref = href;
   const match = parseDrivePreviewUrl(href);
+  console.debug('[GD-Peeker] url', href, match ? `fileId=${match.fileId}` : 'no match', 'title=', document.title);
   if (!match) {
     lastSentFileId = ''; // preview closed: the same file may be opened again later
     return;
   }
   if (match.fileId === lastSentFileId) return;
   lastSentFileId = match.fileId;
-  chrome.runtime.sendMessage({
-    type: 'drive:preview',
-    fileId: match.fileId,
-    title: normalizeDriveTitle(document.title),
-  });
+  chrome.runtime.sendMessage(
+    {
+      type: 'drive:preview',
+      fileId: match.fileId,
+      title: normalizeDriveTitle(document.title),
+    },
+    (response) => console.debug('[GD-Peeker] background replied', response, chrome.runtime.lastError?.message ?? '')
+  );
 }
 
 if ('navigation' in window) {
