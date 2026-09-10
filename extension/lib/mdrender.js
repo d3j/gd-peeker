@@ -14,7 +14,9 @@ export function createMarkdownRenderer(libs, options = {}) {
   if (mdOptions.preset === 'gfm') md.enable(['table', 'strikethrough']);
   if (mdOptions.preset === 'gfm' && mdOptions.plugins.footnote && libs.markdownItFootnote) md.use(libs.markdownItFootnote);
   if (mdOptions.preset === 'gfm' && mdOptions.plugins.taskLists && libs.markdownItTaskLists) {
-    md.use(libs.markdownItTaskLists, { enabled: true, label: true, labelAfter: true });
+    // labelAfter は使わない: プラグインが行のソースを label に複製するため、
+    // インライン記法(`code` など)を含むタスク項目が二重に出て記法も壊れる(2026-09-10 ストア用スクショで発見)
+    md.use(libs.markdownItTaskLists, { enabled: true, label: true });
   }
   if (mdOptions.preset === 'gfm' && mdOptions.plugins.anchor && libs.markdownItAnchor) {
     md.use(libs.markdownItAnchor, { slugify: slug });

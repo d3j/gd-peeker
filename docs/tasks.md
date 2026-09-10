@@ -79,6 +79,15 @@
 - 追記(2026-09-10 千田の手動確認): `chrome://extensions` で再読み込みした直後に「エラー: No tab with id: N」(background.js の `updateAction` → `chrome.action.setBadgeText`)。`tabs.onUpdated` から設定読込と previewByTab 参照を await している間にタブが閉じると、存在しないタブ ID にバッジを付けて例外になる競合(再読み込み直後は全タブ分の onUpdated が来るので出やすい)。動作には影響しないが赤いエラーが残るので、バッジ/タイトル設定を try/catch で握りつぶした
 - 残している既知の見た目: `fullWidth:false` + dark で `.md-root` の外側(sandbox の body)が白のまま。M7 の範囲外
 
+## M8 ストア提出の準備 — 完了(2026-09-10、Claude 実装)
+- [x] `scripts/pack.mjs`(`cd scripts && npm run pack`): SPEC §11 の機械確認を通してから `dist/gd-peeker-<version>.zip` を作る。権限・host_permissions・外部参照・`vendor/sandbox-runtime.js` の再生成忘れ・ストアの文字数上限・zip 直下の manifest.json を確認し、1 つでも外れたら zip を作らない
+- [x] `scripts/store-assets.mjs`: 掲載用スクショ 5 枚(1280x800)+ 小タイル 440x280 + マーキー 1400x560 を生成。実機 Drive には触らず、E2E と同じ route 差し替えで描く。PNG は color type 2(アルファ無し)
+- [x] `docs/store-submission.md`: デベロッパーダッシュボードのどの欄に何を入れるか(掲載情報・プライバシー・配布)、審査の差し戻し理由と現状、提出前に千田が決めること
+- [x] manifest の `description` が 139 文字でストアの上限 132 を超えていた → 123 文字に短縮(`Render .html, .md, .txt and .xml files from Google Drive™ in a new tab. No server, no sign-in, nothing leaves your browser.`)。**この状態では zip をアップロードした時点で弾かれる**ので、`pack.mjs` に文字数チェックを入れた
+- [x] markdown のタスクリストが二重に描画されていた(スクショ 2 枚目で発見)。`markdown-it-task-lists` の `labelAfter: true` は行のソースを label に複製するため、`- [x] Sandbox has no \`allow-same-origin\`` が「テキスト + 生ソース」の 2 回出て、インライン記法も壊れていた → `{ enabled: true, label: true }` に変更(`<label>` が項目全体を包むのでクリック範囲も広い)。unit に回帰テストを追加、vendor 再生成
+- 判断: zip・画像はコミットしない(`dist/` は .gitignore 済み)。再現できるスクリプトだけを置く
+- テスト(2026-09-10): unit 34/34、隔離 E2E 60/60。zip 1.05MB / 38 entries
+
 ## v0.2 以降(候補)
 - background の二重起動防止 Map を `chrome.storage.session` に置く(service worker 再起動で消える問題)
 - csv / tsv のテーブル表示(ソート・列固定)
@@ -87,5 +96,5 @@
 - html の相対パス解決(同上)
 - Drive の一覧画面で行を選択しただけの状態からアイコンで開く(DOM 依存が要るため原則やらない)
 - `share` 用の固定 URL(拡張の viewer URL は他人の環境では開けないので、Drive のリンク + 「GD-Peeker で開く」案内)
-- ストア公開: スクリーンショット 5 枚、プロモ画像、Web Store 開発者登録(5 USD)
+- ストア公開: 提出物(zip・スクショ 5 枚・プロモ画像)と手順書は M8 で用意済み。残りは Web Store 開発者登録(5 USD)と、docs/store-submission.md §8 の判断 → 提出
 - ドメイン(gd-peeker.app 等)は防衛目的のみ。ストア公開直前に検討

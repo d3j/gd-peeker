@@ -23,6 +23,17 @@ GD-Peeker — Google Drive 上の html/md/txt/xml を別タブでレンダリン
 - 自動起動は **同一タブ・同一 fileId で二重起動しない**(content script が最後に開いた id を保持し、プレビュー URL から離れたら解除する。background の Map は既存 viewer タブへフォーカスするだけ)。**拡張子の無いファイル名は自動起動しない**(バイナリ誤爆防止。手動は開ける)
 - **sandbox ページは `event.source === window.parent` 以外の `render` を無視する**(ユーザー iframe が自分を緩い設定で再描画させる経路を塞ぐ。E2E の項目 4 が回帰テスト)
 
+## ストア提出
+
+提出物は `dist/`(.gitignore 済み)に生成する。**生成物はコミットせず、スクリプトだけを置く。**
+
+```sh
+cd scripts && npm run pack                        # SPEC §11 の機械確認 → dist/gd-peeker-<version>.zip
+node ~/Code/gd-peeker/scripts/store-assets.mjs    # dist/store/ に掲載画像(要 playwright-core)
+```
+
+`pack.mjs` のチェックに引っかかったら zip は作られない。**チェックを緩める方向の変更はしない**(SPEC §11 と同じ扱い)。ダッシュボードの各欄に入れる値は [docs/store-submission.md](docs/store-submission.md)、掲載文は [docs/store-listing.md](docs/store-listing.md)。manifest の `description` はストアの 132 文字上限があるので、書き換えたら `npm run pack` を通す。
+
 ## テストの実行方法
 
 ```sh
@@ -36,7 +47,7 @@ node ~/Code/gd-peeker/tests/e2e-fetch-failure.mjs # 6項目(fetch 失敗: direct
 node ~/Code/gd-peeker/tests/e2e-drive.mjs         # 17項目(実機 Drive: GD-Peeker-dev フォルダ内の html/md/Shift_JIS txt/xml。ダブルクリック → 自動起動 → 描画 → previewByTab。既定アプリに取られる形式があれば /file/d/<id>/view 経路で代替(⚠️ として数える))
 ```
 
-隔離 E2E 合計: 60項目(html 15 + md 13 + text 9 + settings 17 + fetch failure 6)。実機 E2E: 17項目(drive)。unit 33件。**2026-09-10 M7 時点で unit 33 / 隔離 E2E 60 / 実機 E2E 17 がすべてパス**(Chrome for Testing、実機は hmw アカウントの GD-Peeker-dev フォルダ)。
+隔離 E2E 合計: 60項目(html 15 + md 13 + text 9 + settings 17 + fetch failure 6)。実機 E2E: 17項目(drive)。unit 34件。**2026-09-10 M8 時点で unit 34 / 隔離 E2E 60 がすべてパス**(実機 E2E 17 は M7 時点でパス)(Chrome for Testing、実機は hmw アカウントの GD-Peeker-dev フォルダ)。
 
 - Chrome for Testing を ms-playwright キャッシュから自動検出(`CHROME_FOR_TESTING` で明示可)
 - **永続プロファイルは拡張の service worker スクリプトをキャッシュする**(2026-09-10 実機で確認: background.js を更新しても古いものが動き続け、webRequest リスナが無かった)。実機ハーネス(`tests/e2e-drive.mjs`、`scripts/drive-inspect.mjs`)は起動直後に `chrome.runtime.reload()` で拡張を起動し直す(`freshServiceWorker`)。手動確認でも `git pull` 後は `chrome://extensions` の再読み込みが必須

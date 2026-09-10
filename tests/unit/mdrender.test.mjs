@@ -49,6 +49,14 @@ test('footnotes and task lists render through configured plugins', () => {
   assert.match(result.html, /footnote/);
 });
 
+test('task item keeps inline markup once (labelAfter regression)', () => {
+  const renderer = createMarkdownRenderer(libs);
+  const result = renderer.render('- [x] keep `code` intact');
+  assert.match(result.html, /<code>code<\/code>/);
+  assert.equal(result.html.match(/keep/g).length, 1);
+  assert.doesNotMatch(result.html, /`code`/);
+});
+
 test('headings are collected for TOC', () => {
   const renderer = createMarkdownRenderer(libs, { toc: true });
   const result = renderer.render('# One\n\n## Two');

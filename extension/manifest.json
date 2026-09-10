@@ -3,7 +3,7 @@
   "name": "GD-Peeker — HTML, Markdown, XML & Text Viewer for Google Drive™",
   "short_name": "GD-Peeker",
   "version": "0.1.0",
-  "description": "Open .html, .md, .txt and .xml files from Google Drive™ as rendered pages in a new tab. No server, no sign-in, nothing leaves your browser.",
+  "description": "Render .html, .md, .txt and .xml files from Google Drive™ in a new tab. No server, no sign-in, nothing leaves your browser.",
   "minimum_chrome_version": "120",
   "permissions": ["storage", "webRequest"],
   "host_permissions": [

@@ -2,7 +2,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "vendor": "node vendor.mjs"
+    "vendor": "node vendor.mjs",
+    "pack": "node pack.mjs",
+    "icons": "node icons.mjs"
   },
   "devDependencies": {
     "dompurify": "3.4.15",
