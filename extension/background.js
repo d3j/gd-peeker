@@ -158,8 +158,12 @@ async function updateAction(tabId, url) {
   const preview = await getPreview(tabId);
   await localizedSettings();
   const active = Boolean(match || preview);
-  await chrome.action.setBadgeText({ tabId, text: active ? '●' : '' });
-  await chrome.action.setTitle({ tabId, title: active ? t('actionOpen') : t('actionSettings') });
+  try {
+    await chrome.action.setBadgeText({ tabId, text: active ? '●' : '' });
+    await chrome.action.setTitle({ tabId, title: active ? t('actionOpen') : t('actionSettings') });
+  } catch {
+    // the tab was closed between the tabs event and here ("No tab with id: N"); nothing to badge
+  }
 }
 
 async function localizedSettings() {

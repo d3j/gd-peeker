@@ -76,6 +76,7 @@
 - 判断: Codex に委譲せず Claude が直接実装した(CSS 中心の小さな差分で、レビューの手間の方が大きい)。`box-sizing` は sandbox 全体に当てず 4 要素に限定(ユーザー md のテーマ css の前提を変えない)
 - 実機 E2E の前提変化: 千田がこのアカウントの `.md`/`.txt` の既定アプリ(StackEdit)を外したので、4 形式ともダブルクリック経路で通るようになった(⚠️ フォールバック無し、項目数 15 → 17)
 - テスト(2026-09-10、Claude 実行): unit 33/33、隔離 E2E 60/60(html 15・md 13・text 9・settings 17・fetch failure 6)、実機 E2E 17/17
+- 追記(2026-09-10 千田の手動確認): `chrome://extensions` で再読み込みした直後に「エラー: No tab with id: N」(background.js の `updateAction` → `chrome.action.setBadgeText`)。`tabs.onUpdated` から設定読込と previewByTab 参照を await している間にタブが閉じると、存在しないタブ ID にバッジを付けて例外になる競合(再読み込み直後は全タブ分の onUpdated が来るので出やすい)。動作には影響しないが赤いエラーが残るので、バッジ/タイトル設定を try/catch で握りつぶした
 - 残している既知の見た目: `fullWidth:false` + dark で `.md-root` の外側(sandbox の body)が白のまま。M7 の範囲外
 
 ## v0.2 以降(候補)
