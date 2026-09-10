@@ -64,6 +64,7 @@ export function normalizeMdOptions(options = {}) {
     theme: ['github', 'plain', 'serif'].includes(options.theme) ? options.theme : 'github',
     colorScheme: ['auto', 'light', 'dark'].includes(options.colorScheme) ? options.colorScheme : 'auto',
     toc: options.toc === true,
+    fullWidth: options.fullWidth !== false,
   };
 }
 

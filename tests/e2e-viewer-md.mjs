@@ -131,6 +131,32 @@ try {
   await sandbox.locator('.mermaid-rendered svg').waitFor({ timeout: 10000 });
   assert((await sandbox.locator('.mermaid-rendered svg').count()) === 1, 'mermaid rendered to SVG');
   assert((await sandbox.locator('.md-toc a').first().textContent()) === 'Fixture MD', 'TOC rendered');
+
+  console.log('2. md.fullWidth (default true) removes the 980px cap; false restores it (M7)');
+  const measure = () =>
+    sandbox.locator('#app').evaluate((app) => {
+      const root = app.querySelector('.md-root');
+      const toc = app.querySelector('.md-toc');
+      return {
+        app: app.getBoundingClientRect().width,
+        root: root.getBoundingClientRect().width,
+        toc: toc ? toc.getBoundingClientRect().width : 0,
+        full: app.classList.contains('md-full'),
+        innerWidth,
+      };
+    });
+  const wide = await measure();
+  assert(wide.full, '#app has md-full by default');
+  assert(wide.innerWidth > 980 + wide.toc, `test viewport is wide enough to tell (${wide.innerWidth})`);
+  assert(Math.abs(wide.root - (wide.app - wide.toc)) <= 2, `.md-root takes the full width next to the TOC (${wide.root} = ${wide.app} - ${wide.toc})`);
+  await sw.evaluate(async () => {
+    const { settings } = await chrome.storage.local.get('settings');
+    settings.md.fullWidth = false;
+    await chrome.storage.local.set({ settings });
+  });
+  await sandbox.locator('#app:not(.md-full) .md-root h1#fixture-md').waitFor({ timeout: 5000 });
+  const narrow = await measure();
+  assert(!narrow.full && narrow.root === 980, `.md-root is capped at 980px when fullWidth=false (${narrow.root})`);
 } finally {
   await ctx.close();
 }

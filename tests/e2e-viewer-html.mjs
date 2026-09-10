@@ -129,6 +129,45 @@ try {
   const allowedImage = await user.locator('#external').evaluate((img) => img.complete && img.naturalWidth > 0);
   assert(allowedImage, 'external image loads when allowExternal=true');
 
+  console.log('1b. sandbox fills the viewport below the toolbar (M7)');
+  const layout = await page.evaluate(() => {
+    const rect = (sel) => document.querySelector(sel).getBoundingClientRect();
+    return {
+      innerHeight: innerHeight,
+      innerWidth: innerWidth,
+      toolbar: rect('#toolbar').height,
+      sandbox: rect('#sandbox').height,
+      sandboxWidth: rect('#sandbox').width,
+      scrollWidth: document.documentElement.scrollWidth,
+      scrollHeight: document.documentElement.scrollHeight,
+    };
+  });
+  const expectedHeight = layout.innerHeight - layout.toolbar;
+  assert(Math.abs(layout.sandbox - expectedHeight) <= 2, `sandbox height is viewport minus toolbar (${layout.sandbox} vs ${expectedHeight})`);
+  assert(layout.sandboxWidth === layout.innerWidth, 'sandbox width is the full viewport width');
+  assert(layout.scrollWidth <= layout.innerWidth && layout.scrollHeight <= layout.innerHeight, 'viewer page does not scroll');
+  const userRect = await page.frameLocator('#sandbox').locator('#user').evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return { height: r.height, width: r.width, innerHeight, innerWidth };
+  });
+  assert(Math.abs(userRect.height - userRect.innerHeight) <= 2 && userRect.width === userRect.innerWidth, 'user iframe fills the sandbox');
+
+  console.log('1c. sandbox still takes the remaining height when #notice is shown (M7)');
+  await sw.evaluate(() => chrome.storage.local.set({ htmlNoticeDismissed: false }));
+  const noticePage = await ctx.newPage();
+  await noticePage.goto(`chrome-extension://${extId}/viewer.html?id=test-html`);
+  await noticePage.frameLocator('#sandbox').frameLocator('#user').locator('#ran').waitFor({ timeout: 5000 });
+  await noticePage.locator('#notice:visible').waitFor({ timeout: 5000 });
+  const noticeLayout = await noticePage.evaluate(() => {
+    const rect = (sel) => document.querySelector(sel).getBoundingClientRect();
+    return { innerHeight, toolbar: rect('#toolbar').height, notice: rect('#notice').height, sandbox: rect('#sandbox').height };
+  });
+  assert(noticeLayout.notice > 0, 'html notice is visible');
+  const expectedWithNotice = noticeLayout.innerHeight - noticeLayout.toolbar - noticeLayout.notice;
+  assert(Math.abs(noticeLayout.sandbox - expectedWithNotice) <= 2, `sandbox height is viewport minus toolbar and notice (${noticeLayout.sandbox} vs ${expectedWithNotice})`);
+  await noticePage.close();
+  await sw.evaluate(() => chrome.storage.local.set({ htmlNoticeDismissed: true }));
+
   console.log('2. allowScripts=false removes script execution');
   await sw.evaluate(() =>
     chrome.storage.local.set({

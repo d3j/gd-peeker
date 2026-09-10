@@ -21,6 +21,13 @@ body {
   display: none;
 }
 
+#app,
+.text-pre,
+.code-pre,
+.xml-view {
+  box-sizing: border-box;
+}
+
 #app {
   min-height: 100%;
 }

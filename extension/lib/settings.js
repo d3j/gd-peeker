@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     theme: 'github',
     colorScheme: 'auto',
     toc: false,
+    fullWidth: true,
   },
   txt: { wrap: true, fontSize: 14, lineNumbers: false },
   encoding: { default: 'auto' },

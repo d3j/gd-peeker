@@ -1,4 +1,5 @@
 
-.md-root{max-width:920px;margin:0 auto;padding:24px 32px;font:16px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1f2328;background:#fff}
+.md-root{box-sizing:border-box;width:100%;max-width:920px;margin:0 auto;padding:24px 32px;font:16px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1f2328;background:#fff}
+.md-full .md-root{max-width:none;margin:0}
 .md-root pre{padding:14px;overflow:auto;background:#f5f5f5}.md-root code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.md-root img{max-width:100%}.md-root table{border-collapse:collapse}.md-root th,.md-root td{padding:6px 10px;border:1px solid #d0d7de}.md-root .front-matter{border:1px solid #d0d7de;padding:0 10px}
 body.scheme-dark .md-root{color:#e6edf3;background:#0f1115}body.scheme-dark .md-root pre{background:#1a1d24}body.scheme-dark .md-root th,body.scheme-dark .md-root td,body.scheme-dark .md-root .front-matter{border-color:#3a3f4b}

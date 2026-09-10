@@ -148,7 +148,8 @@ async function firstReadable(paths) {
 
 function mdThemeGithub() {
   return `
-.md-root{max-width:980px;margin:0 auto;padding:24px 32px;font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#24292f;background:#fff}
+.md-root{box-sizing:border-box;width:100%;max-width:980px;margin:0 auto;padding:24px 32px;font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#24292f;background:#fff}
+.md-full .md-root{max-width:none;margin:0}
 .md-root h1,.md-root h2{padding-bottom:.3em;border-bottom:1px solid #d0d7de}
 .md-root h1{font-size:2em}.md-root h2{font-size:1.5em}.md-root h3{font-size:1.25em}
 .md-root a{color:#0969da}.md-root table{border-collapse:collapse;display:block;overflow:auto}.md-root th,.md-root td{padding:6px 13px;border:1px solid #d0d7de}.md-root tr:nth-child(2n){background:#f6f8fa}
@@ -161,7 +162,8 @@ body.scheme-dark .md-root{color:#c9d1d9;background:#0d1117}body.scheme-dark .md-
 
 function mdThemePlain() {
   return `
-.md-root{max-width:920px;margin:0 auto;padding:24px 32px;font:16px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1f2328;background:#fff}
+.md-root{box-sizing:border-box;width:100%;max-width:920px;margin:0 auto;padding:24px 32px;font:16px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1f2328;background:#fff}
+.md-full .md-root{max-width:none;margin:0}
 .md-root pre{padding:14px;overflow:auto;background:#f5f5f5}.md-root code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.md-root img{max-width:100%}.md-root table{border-collapse:collapse}.md-root th,.md-root td{padding:6px 10px;border:1px solid #d0d7de}.md-root .front-matter{border:1px solid #d0d7de;padding:0 10px}
 body.scheme-dark .md-root{color:#e6edf3;background:#0f1115}body.scheme-dark .md-root pre{background:#1a1d24}body.scheme-dark .md-root th,body.scheme-dark .md-root td,body.scheme-dark .md-root .front-matter{border-color:#3a3f4b}
 `;
@@ -169,7 +171,8 @@ body.scheme-dark .md-root{color:#e6edf3;background:#0f1115}body.scheme-dark .md-
 
 function mdThemeSerif() {
   return `
-.md-root{max-width:780px;margin:0 auto;padding:28px 36px;font:18px/1.75 Georgia,"Times New Roman",serif;color:#202124;background:#fff}
+.md-root{box-sizing:border-box;width:100%;max-width:780px;margin:0 auto;padding:28px 36px;font:18px/1.75 Georgia,"Times New Roman",serif;color:#202124;background:#fff}
+.md-full .md-root{max-width:none;margin:0}
 .md-root code,.md-root pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em}.md-root pre{padding:16px;overflow:auto;background:#f6f6f2}.md-root img{max-width:100%}.md-root table{border-collapse:collapse}.md-root th,.md-root td{padding:6px 10px;border:1px solid #d2d0c8}.md-root .front-matter{border:1px solid #d2d0c8;padding:0 10px;background:#faf9f4}
 body.scheme-dark .md-root{color:#ece6d9;background:#111}body.scheme-dark .md-root pre,body.scheme-dark .md-root .front-matter{background:#1b1b18}body.scheme-dark .md-root th,body.scheme-dark .md-root td,body.scheme-dark .md-root .front-matter{border-color:#444039}
 `;

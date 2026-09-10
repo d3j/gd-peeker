@@ -34,6 +34,7 @@ function render() {
   document.querySelector('#mdFrontMatter').checked = settings.md.plugins.frontMatter;
   document.querySelector('#mdMermaid').checked = settings.md.plugins.mermaid;
   document.querySelector('#mdToc').checked = settings.md.toc;
+  document.querySelector('#mdFullWidth').checked = settings.md.fullWidth;
   document.querySelector('#mdTheme').value = settings.md.theme;
   document.querySelector('#mdColorScheme').value = settings.md.colorScheme;
   document.querySelector('#wrap').checked = settings.txt.wrap;
@@ -57,6 +58,7 @@ function readForm() {
   settings.md.plugins.frontMatter = document.querySelector('#mdFrontMatter').checked;
   settings.md.plugins.mermaid = document.querySelector('#mdMermaid').checked;
   settings.md.toc = document.querySelector('#mdToc').checked;
+  settings.md.fullWidth = document.querySelector('#mdFullWidth').checked;
   settings.md.theme = document.querySelector('#mdTheme').value;
   settings.md.colorScheme = document.querySelector('#mdColorScheme').value;
   settings.txt.wrap = document.querySelector('#wrap').checked;

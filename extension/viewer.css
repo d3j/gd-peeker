@@ -9,14 +9,19 @@ body {
 }
 
 body {
-  display: grid;
-  grid-template-rows: 40px auto auto auto 1fr;
+  /* flex column, not grid: hidden/empty rows (#notice, #large-confirm, #status, #diagnostics)
+     take no space, so #sandbox always gets whatever height is left (M7) */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden auto;
   font: 13px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #202124;
   background: #f8fafd;
 }
 
 #toolbar {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -58,6 +63,7 @@ button {
 #notice,
 #large-confirm,
 #status {
+  flex: none;
   padding: 8px 12px;
   border-bottom: 1px solid #dfe3ea;
   background: #fff8df;
@@ -79,6 +85,7 @@ button {
 }
 
 #diagnostics {
+  flex: none;
   padding: 12px;
   border-bottom: 1px solid #dfe3ea;
   background: #fff;
@@ -99,8 +106,9 @@ button {
 }
 
 #sandbox {
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
-  height: 100%;
   border: 0;
   background: #fff;
 }

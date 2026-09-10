@@ -59,10 +59,24 @@
 ## 実機確認
 - [x] 「アプリで開く → 新しいタブで開く」+ アイコンクリックで html が描画された(2026-09-09 千田)= **Cookie 同送 fetch は通る**
 - [x] 一覧ダブルクリックの調査(2026-09-10、専用プロファイル + hmw アカウント、フォルダ GD-Peeker-dev 内): URL/title 不変、fileId 入り iframe 無し、**通信に fileId が乗る**(`docos/p/sync`、`drivesharing/clientmodel`)→ M6 へ
-- [x] GD-Peeker-dev フォルダで html / xml のダブルクリック → 自動起動 → 描画(2026-09-10、実機 E2E)。md / txt は既定アプリ StackEdit に取られるため view 経路で描画確認。**ダブルクリック経路で md/txt も見るには、このアカウントの `.md`/`.txt` の既定アプリを外す必要がある(千田判断)**
+- [x] GD-Peeker-dev フォルダで html / xml のダブルクリック → 自動起動 → 描画(2026-09-10、実機 E2E)。md / txt は既定アプリ StackEdit に取られるため view 経路で描画確認 → 千田が既定アプリを外し、M7 着手前(2026-09-10)に 4 形式ともダブルクリック経路で 17/17
 - [ ] 共有された他人のファイル(閲覧権限のみ)でも取れるか
 - [ ] hmw.gr.jp アカウント(Workspace)と gmail アカウントの両方で取れるか(`authuser` 複数ログイン時の挙動)
 - [ ] `drivefetch` のどの段で成功したかを記録して docs/usage.md に反映
+
+## M7 viewer の描画領域をブラウザいっぱいに広げる — 完了(2026-09-10、Claude 実装)
+- 症状: html 等を開いたとき描画領域が狭い(約 150px)。md は中央の 980px 幅にしか出ない
+- 原因(高さ): `viewer.css` の body が `grid-template-rows: 40px auto auto auto 1fr` で、hidden の `#notice`/`#large-confirm`/`#diagnostics` と `:empty` の `#status` は `display:none` になっても grid の行としては残る → `#sandbox` が 2 行目(auto)に落ち、iframe の `height:100%` が効かず既定高さになっていた
+- 原因(幅): `vendor/md-theme-*.css` の `.md-root{max-width:980px;margin:0 auto}`。さらに **grid item に `margin:auto` を付けると shrink-to-fit になる**ため、短い文書では `.md-root` が本文幅(E2E fixture で 240px)まで縮んでいた(M7 の E2E で発見。M7 以前からの潜在バグ)
+- [x] `viewer.css` を flex column に(`body{display:flex;flex-direction:column;height:100vh;overflow:hidden auto}`、ツールバー/notice/large-confirm/status/diagnostics は `flex:none`、`#sandbox` は `flex:1 1 auto;min-height:0`)。どの帯が出ていても sandbox が残り全高を取る。横スクロールは出さない
+- [x] `sandbox.css`: `#app`/`.text-pre`/`.code-pre`/`.xml-view` を `box-sizing:border-box` に(`min-height:100vh`/`100%` + padding で sandbox を数十 px はみ出し、短いファイルでも二重スクロールになっていた)
+- [x] 設定 `md.fullWidth`(既定 `true`。千田の要望「ブラウザサイズ一杯」)を `lib/settings.js` に追加、`normalizeMdOptions` が通し、sandbox は `#app` に `md-full` クラスを付ける。テーマ css(`scripts/vendor.mjs` → 再生成)に `.md-full .md-root{max-width:none;margin:0}` と、`.md-root{box-sizing:border-box;width:100%}`(shrink-to-fit 対策。false のときも列幅いっぱい → 980px で頭打ち → 中央寄せ)。padding は従来どおり(github/plain 24px 32px、serif 28px 36px)。TOC(220px)は右に残る
+- [x] options の Markdown 節にトグル(`#mdFullWidth`、文言は `messages.js` の `mdFullWidth` en/ja)
+- [x] E2E 追加: html 1b(sandbox 高 = viewport − ツールバー ±2px / 幅 = viewport / viewer がスクロールしない / user iframe が sandbox いっぱい)・1c(`htmlNoticeDismissed:false` で #notice を出しても sandbox が残り全高)、md 2(既定で `md-full`・`.md-root` 幅 = #app − TOC / `fullWidth:false` で 980px)、text(短い Shift_JIS が sandbox いっぱいで縦にはみ出さない)、settings(`fullWidth` の永続化と開いている viewer への反映)
+- 判断: Codex に委譲せず Claude が直接実装した(CSS 中心の小さな差分で、レビューの手間の方が大きい)。`box-sizing` は sandbox 全体に当てず 4 要素に限定(ユーザー md のテーマ css の前提を変えない)
+- 実機 E2E の前提変化: 千田がこのアカウントの `.md`/`.txt` の既定アプリ(StackEdit)を外したので、4 形式ともダブルクリック経路で通るようになった(⚠️ フォールバック無し、項目数 15 → 17)
+- テスト(2026-09-10、Claude 実行): unit 33/33、隔離 E2E 60/60(html 15・md 13・text 9・settings 17・fetch failure 6)、実機 E2E 17/17
+- 残している既知の見た目: `fullWidth:false` + dark で `.md-root` の外側(sandbox の body)が白のまま。M7 の範囲外
 
 ## v0.2 以降(候補)
 - background の二重起動防止 Map を `chrome.storage.session` に置く(service worker 再起動で消える問題)

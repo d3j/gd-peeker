@@ -102,6 +102,12 @@ try {
   await txtSandbox.locator('.text-pre').waitFor({ timeout: 5000 });
   assert((await txtSandbox.locator('.text-pre').textContent()).includes('こんにちは日本語'), 'Shift_JIS text is readable');
   assert((await txtPage.locator('#encoding option:checked').textContent()) === 'Shift_JIS (auto)', 'toolbar shows Shift_JIS (auto)');
+  const txtLayout = await txtSandbox.locator('.text-pre').evaluate((pre) => ({
+    pre: pre.getBoundingClientRect().height,
+    innerHeight,
+    scrollHeight: document.documentElement.scrollHeight,
+  }));
+  assert(Math.abs(txtLayout.pre - txtLayout.innerHeight) <= 2 && txtLayout.scrollHeight <= txtLayout.innerHeight, `short text fills the sandbox without overflowing it (${txtLayout.pre}/${txtLayout.innerHeight}/${txtLayout.scrollHeight})`);
   await txtPage.locator('#encoding').selectOption('utf-8');
   await txtPage.waitForTimeout(500);
   assert((await txtSandbox.locator('.text-pre').textContent()).includes('�'), 'manual UTF-8 override changes decoding');

@@ -99,6 +99,7 @@ try {
   await options.locator('#mdTheme').selectOption('serif');
   await options.locator('#mdColorScheme').selectOption('dark');
   await options.locator('#mdToc').check();
+  await options.locator('#mdFullWidth').uncheck();
   await options.locator('#lineNumbers').check();
   await options.locator('#fontSize').fill('18');
   await options.locator('#fontSize').dispatchEvent('change');
@@ -117,6 +118,7 @@ try {
   assert(saved.settings.html.allowScripts === false, 'HTML setting saved');
   assert(saved.settings.md.theme === 'serif' && saved.settings.md.colorScheme === 'dark', 'Markdown theme settings saved');
   assert(saved.settings.md.toc === true, 'Markdown TOC setting saved');
+  assert(saved.settings.md.fullWidth === false, 'Markdown fullWidth setting saved');
   assert(saved.settings.txt.lineNumbers === true && saved.settings.txt.fontSize === 18, 'Text settings saved');
   assert(saved.settings.encoding.default === 'shift_jis', 'Default encoding saved');
 
@@ -128,6 +130,10 @@ try {
   assert((await sandbox.locator('#app.theme-serif').count()) === 1, 'viewer uses saved markdown theme');
   assert((await sandbox.locator('body.scheme-dark').count()) === 1, 'viewer uses saved color scheme');
   assert((await sandbox.locator('.md-toc a').first().textContent()) === 'Live Settings', 'viewer uses saved TOC setting');
+  assert((await sandbox.locator('#app.md-full').count()) === 0, 'viewer uses saved fullWidth=false');
+  await options.locator('#mdFullWidth').check();
+  await sandbox.locator('#app.md-full').waitFor({ timeout: 5000 });
+  assert((await sandbox.locator('#app.md-full').count()) === 1, 'viewer re-rendered after fullWidth change');
   await options.locator('#mdTheme').selectOption('plain');
   await options.locator('#mdColorScheme').selectOption('light');
   await sandbox.locator('#app.theme-plain').waitFor({ timeout: 5000 });

@@ -49,7 +49,7 @@ function showApp(className = '') {
 
 function renderMarkdown(text, options) {
   const mdOptions = GDPSandbox.normalizeMdOptions(options);
-  showApp(`md-view theme-${mdOptions.theme}`);
+  showApp(`md-view theme-${mdOptions.theme}${mdOptions.fullWidth ? ' md-full' : ''}`);
   document.body.className = `scheme-${mdOptions.colorScheme}`;
   mdTheme.href = `vendor/md-theme-${mdOptions.theme}.css`;
   hljsTheme.href = `vendor/hljs-theme-${mdOptions.colorScheme === 'dark' ? 'dark' : 'light'}.css`;

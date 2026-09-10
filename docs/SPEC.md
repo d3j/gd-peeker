@@ -132,7 +132,9 @@ viewer(拡張ページ)から実行する。順に試し、最初に成功した
 ### 5.1 viewer(拡張ページ)
 
 - URL: `viewer.html?id=<fileId>&name=<hint>`
-- 構成: 上部ツールバー(高さ 40px、折りたたみ可)+ 全面 `<iframe id="sandbox" src="sandbox.html" sandbox="allow-scripts allow-forms allow-popups allow-modals">`(**`allow-same-origin` を付けない**)
+- 構成: 上部ツールバー(高さ 40px)+ 帯(`#notice` / `#large-confirm` / `#status` / `#diagnostics`。必要なときだけ表示)+ 残り全面の `<iframe id="sandbox" src="sandbox.html" sandbox="allow-scripts allow-forms allow-popups allow-modals">`(**`allow-same-origin` を付けない**)
+- レイアウト(M7、2026-09-10): body は `display:flex; flex-direction:column; height:100vh; overflow:hidden auto`。ツールバーと各帯は `flex:none`、`#sandbox` は `flex:1 1 auto; min-height:0; width:100%`。どの帯が表示/非表示でも sandbox が残りの高さを全部取る。横スクロールは出さない(grid の `auto` 行は非表示でも行として残り、sandbox が既定高さに落ちていたため grid をやめた)
+- sandbox 側(`sandbox.css`): html の `#user` iframe は 100%×100%、txt/code の `pre` は `min-height:100vh`、xml の `#app.xml-view` は `min-height:100%`。いずれも `box-sizing:border-box`(padding 込みで sandbox の高さに収め、短いファイルで二重スクロールにしない)
 - ツールバー: ファイル名 / 種別セレクタ(§5.0)/ 文字コードセレクタ(auto + 判定結果表示 + 手動: UTF-8, Shift_JIS, EUC-JP, UTF-16LE, UTF-16BE, ISO-8859-1)/ 再読み込み / Drive で開く(`https://drive.google.com/file/d/<id>/view` を新タブ)/ ソースをコピー / ソース表示トグル(`code` 描画に切替)/ 設定(options を開く)
 - 手順: ①`drivefetch` で bytes 取得 → ②`encoding.decode(bytes, override)` → ③種別ごとに sandbox へ `postMessage({type:'render', kind, text|html, options})` → ④sandbox から `{type:'rendered', title?, height?}` / `{type:'error'}` を受けてツールバー更新。`document.title` は `<ファイル名> — GD-Peeker`
 - 失敗時: ツールバー下に診断パネル(§4 の `attempts[]` を表形式)+「Drive で開く」「再試行」ボタン。**エラー文言に「ログインしているか」「共有権限があるか」の確認を含める**
@@ -156,7 +158,8 @@ viewer(拡張ページ)から実行する。順に試し、最初に成功した
 - 出力は **DOMPurify** を通す(`ADD_TAGS: ['pre'], ADD_ATTR: ['class','id','target']`、`FORBID_TAGS: ['style','script','iframe','object','embed']`)。**md では inline HTML の script を絶対に動かさない**
 - sandbox 内で `.mermaid` を mermaid(`securityLevel:'strict'`, `startOnLoad:false`)でレンダリング。失敗した図はソースをそのまま `<pre>` で残す
 - テーマ `md.theme`: `github`(既定)/ `plain` / `serif`。`prefers-color-scheme: dark` に追従(設定で `light`/`dark`/`auto`)
-- 目次: 設定 `md.toc=true` で見出しから右サイドに TOC(sandbox 内)
+- 目次: 設定 `md.toc=true` で見出しから右サイドに TOC(sandbox 内、幅 220px)
+- 幅: 設定 `md.fullWidth`(既定 `true`)で `.md-root` の `max-width` を外し、ブラウザ(sandbox)の横幅いっぱいに描く(余白 padding は残す。TOC は右に残る)。`false` は従来の読みやすい幅(github 980px / plain 920px / serif 780px、中央寄せ)。sandbox は `#app` に `md-full` クラスを付け、テーマ css(`scripts/vendor.mjs` 生成)の `.md-full .md-root{max-width:none;margin:0}` が効く。`.md-root` は `width:100%; box-sizing:border-box`(grid item の `margin:auto` は shrink-to-fit になり、短い文書が本文幅まで縮むため)
 - KaTeX は v0.1 対象外(tasks.md に後続として記載)
 
 ### 5.4 xml(lib/xmlformat.js)
@@ -188,7 +191,7 @@ viewer(拡張ページ)から実行する。順に試し、最初に成功した
   autoOpen: true,
   autoOpenTypes: ['html','md','txt','xml'],        // 'code' は既定 off
   html: { allowScripts: true, allowExternal: true },
-  md:   { preset: 'gfm', plugins: { footnote: true, taskLists: true, anchor: true, frontMatter: true, mermaid: true }, theme: 'github', colorScheme: 'auto', toc: false },
+  md:   { preset: 'gfm', plugins: { footnote: true, taskLists: true, anchor: true, frontMatter: true, mermaid: true }, theme: 'github', colorScheme: 'auto', toc: false, fullWidth: true },
   txt:  { wrap: true, fontSize: 14, lineNumbers: false },
   encoding: { default: 'auto' },                   // 'auto' | 'utf-8' | 'shift_jis' | 'euc-jp'
   uiLang: 'en'                                     // 'en' | 'ja'
@@ -214,10 +217,10 @@ tabflock の `messages.js` と同じ形(`t(key, params)`、`{en:{...}, ja:{...}}
 
 - `tests/unit/`: `encoding`(UTF-8/BOM/Shift_JIS/EUC-JP/UTF-16 の fixture バイト列)、`filetype`、`xmlformat`(整形・エラー・CDATA 保持)、`mdrender`(DOMPurify で script が落ちる・mermaid ブロックが `<pre class="mermaid">` になる・front matter)、`drivefetch` の `Content-Disposition` 解析と confirm ページ判定
 - `tests/e2e-*.mjs`: Playwright + Chrome for Testing(`--load-extension`)。Drive には行かない。`context.route('https://drive.google.com/uc**')` と `https://drive.usercontent.google.com/**` を fixture で応答させ、`chrome-extension://<id>/viewer.html?id=test-html` を直接開いて検証する
-  - html: `<script>` が実行される(DOM に書いた要素が見える)/ `allowScripts=false` で実行されない / `allowExternal=false` で外部 img がブロックされる / 内側 iframe から `parent.chrome` にアクセスできない(null origin)/ `<title>` が viewer のタイトルに反映
-  - md: 見出し・表・タスクリスト・脚注 / inline `<script>` が消える / mermaid が svg になる / hljs のクラスが付く
-  - text: Shift_JIS の fixture が化けずに読める・ツールバーに `Shift_JIS (auto)` / 手動で UTF-8 に切替えると化ける(=上書きが効く)/ xml 整形・折りたたみ・不正 xml のフォールバック / json 整形
-  - settings: options の変更が `storage.local` に入る / 開いている viewer に反映 / `uiLang:'ja'` で日本語
+  - html: `<script>` が実行される(DOM に書いた要素が見える)/ `allowScripts=false` で実行されない / `allowExternal=false` で外部 img がブロックされる / 内側 iframe から `parent.chrome` にアクセスできない(null origin)/ `<title>` が viewer のタイトルに反映 / (M7)sandbox の高さ = viewport − ツールバー(±2px)・幅 = viewport・viewer がスクロールしない・`#notice` を出しても sandbox が残り全高
+  - md: 見出し・表・タスクリスト・脚注 / inline `<script>` が消える / mermaid が svg になる / hljs のクラスが付く / (M7)`fullWidth` 既定で `.md-root` が TOC の隣で横幅いっぱい・`false` で 980px
+  - text: Shift_JIS の fixture が化けずに読める・ツールバーに `Shift_JIS (auto)` / 手動で UTF-8 に切替えると化ける(=上書きが効く)/ (M7)短いテキストが sandbox いっぱいで縦にはみ出さない / xml 整形・折りたたみ・不正 xml のフォールバック / json 整形
+  - settings: options の変更が `storage.local` に入る(`md.fullWidth` 含む)/ 開いている viewer に反映 / `uiLang:'ja'` で日本語
   - fetch 失敗: route で 403 を返す → 診断パネルに 3 段の attempts が並ぶ
 - 拡張 ID は Chrome for Testing 起動後に `chrome://extensions` ではなく service worker の URL(`context.serviceWorkers()`)から取る(tabflock の E2E と同じ)
 - **実機 E2E `tests/e2e-drive.mjs`**(専用プロファイル `~/.gd-peeker/profile`、`scripts/drive-inspect.mjs` と同じ起動。Drive フォルダ `https://drive.google.com/drive/folders/1DkhF-K_7FymE8hWRNh8ehvEnS16rBvhW`(GD-Peeker-dev)の中だけを読み書きする): フォルダを開く → `tests/fixtures/gdp-*` の各行(`[aria-label^="<name> "]`、テストハーネスは DOM を使ってよい)をダブルクリック → `context.waitForEvent('page')` で `viewer.html?id=<行の data-id>` が開く → 描画を確認(html: sandbox 内 user iframe に `#ok` / md: `.md-root h1` / sjis txt: `.text-pre` に「日本語のテキスト」/ xml: `.xml-tree`)→ viewer を閉じ、Esc でプレビューを閉じる。さらにアイコン経路: プレビューを開いたまま `chrome.action.onClicked` 相当を service worker から `chrome.action.onClicked.dispatch` は不可なので、`sw.evaluate` で `openViewer` を直接呼ぶ代わりに **`previewByTab` が session storage に入っていること**を確認する

@@ -17,6 +17,7 @@ GD-Peeker — Google Drive 上の html/md/txt/xml を別タブでレンダリン
 - **UI 文字列は `extension/lib/messages.js` の `t(key, params)` 経由**(直書き禁止)。既定言語は en、`chrome.storage.local` の `uiLang` で ja に切替(`chrome.i18n` は実行時切替不可のため不使用)
 - **本体にテスト用分岐を入れない。** E2E は Playwright の route / fixture で外から差し替える
 - 設定のキーとデフォルト値は `extension/lib/settings.js` の一箇所で定義する(viewer・options・background で複製しない)
+- **viewer の縦レイアウトは flex column**(`viewer.css`)。`#sandbox` は `flex:1 1 auto; min-height:0` で残り全高を取る。grid に戻さない(非表示の帯が行として残り sandbox が既定高さに落ちる、M7 で修正済み)。md の幅は設定 `md.fullWidth`(既定 true)で `#app.md-full` → テーマ css の `.md-full .md-root` が効く。テーマ css は `scripts/vendor.mjs` の生成物なので `vendor/` を直接編集しない
 - **`lib/mdrender.js` と `lib/xmlformat.js` を変えたら `cd scripts && npm run vendor` を再実行する。** sandbox ページ(unique origin)は ES module を import できないため、この 2 つは `vendor/sandbox-runtime.js` に IIFE 化して読み込んでいる。E2E はバンドル側を見るので、再生成を忘れると古いコードをテストする
 - **`vendor/mermaid.js`(約 8MB)は sandbox.html から参照しない。** mermaid ブロックがある文書を描くときだけ `sandbox.js` の `loadMermaid()` が動的に読む。html/txt/xml の表示で 8MB を読ませない
 - 自動起動は **同一タブ・同一 fileId で二重起動しない**(content script が最後に開いた id を保持し、プレビュー URL から離れたら解除する。background の Map は既存 viewer タブへフォーカスするだけ)。**拡張子の無いファイル名は自動起動しない**(バイナリ誤爆防止。手動は開ける)
@@ -27,15 +28,15 @@ GD-Peeker — Google Drive 上の html/md/txt/xml を別タブでレンダリン
 ```sh
 node --test tests/unit/*.test.mjs  # lib/* の単体テスト(encoding / filetype / xmlformat / md pipeline / drivefetch sniff / drive URL)
 cd <任意の作業ディレクトリ> && npm i playwright-core
-node ~/Code/gd-peeker/tests/e2e-viewer-html.mjs   # 9項目(html: sandbox 描画・スクリプト実行/禁止・外部リソース CSP・null origin・title 返却・子 iframe からの render 乗っ取り拒否)
-node ~/Code/gd-peeker/tests/e2e-viewer-md.mjs     # 9項目(md: GFM 表/タスク/脚注・script 除去と不実行・front matter・hljs・mermaid→svg・TOC)
-node ~/Code/gd-peeker/tests/e2e-viewer-text.mjs   # 8項目(Shift_JIS 自動判定と手動上書き / xml 整形・折りたたみ・不正 xml フォールバック / json 整形)
-node ~/Code/gd-peeker/tests/e2e-settings.mjs      # 14項目(options: 設定永続化・開いている viewer への反映・言語切替)
+node ~/Code/gd-peeker/tests/e2e-viewer-html.mjs   # 15項目(html: sandbox 描画・スクリプト実行/禁止・外部リソース CSP・null origin・title 返却・子 iframe からの render 乗っ取り拒否・sandbox が viewport いっぱい/#notice 表示時も残り全高)
+node ~/Code/gd-peeker/tests/e2e-viewer-md.mjs     # 13項目(md: GFM 表/タスク/脚注・script 除去と不実行・front matter・hljs・mermaid→svg・TOC・fullWidth true/false で .md-root 幅)
+node ~/Code/gd-peeker/tests/e2e-viewer-text.mjs   # 9項目(Shift_JIS 自動判定と手動上書き・短いテキストが sandbox いっぱいで二重スクロール無し / xml 整形・折りたたみ・不正 xml フォールバック / json 整形)
+node ~/Code/gd-peeker/tests/e2e-settings.mjs      # 17項目(options: 設定永続化(md.fullWidth 含む)・開いている viewer への反映・言語切替)
 node ~/Code/gd-peeker/tests/e2e-fetch-failure.mjs # 6項目(fetch 失敗: direct 403 / direct 500 / content-script no-drive-tab の診断・文言・操作ボタン)
-node ~/Code/gd-peeker/tests/e2e-drive.mjs         # 15項目(実機 Drive: GD-Peeker-dev フォルダ内の html/md/Shift_JIS txt/xml。ダブルクリック → 自動起動 → 描画 → previewByTab。既定アプリに取られる形式は /file/d/<id>/view 経路で代替)
+node ~/Code/gd-peeker/tests/e2e-drive.mjs         # 17項目(実機 Drive: GD-Peeker-dev フォルダ内の html/md/Shift_JIS txt/xml。ダブルクリック → 自動起動 → 描画 → previewByTab。既定アプリに取られる形式があれば /file/d/<id>/view 経路で代替(⚠️ として数える))
 ```
 
-隔離 E2E 合計: 46項目(html 9 + md 9 + text 8 + settings 14 + fetch failure 6)。実機 E2E: 15項目(drive)。unit 33件。**2026-09-10 時点で unit 33 / 隔離 E2E 46 / 実機 E2E 15 がすべてパス**(Chrome for Testing、実機は hmw アカウントの GD-Peeker-dev フォルダ)。
+隔離 E2E 合計: 60項目(html 15 + md 13 + text 9 + settings 17 + fetch failure 6)。実機 E2E: 17項目(drive)。unit 33件。**2026-09-10 M7 時点で unit 33 / 隔離 E2E 60 / 実機 E2E 17 がすべてパス**(Chrome for Testing、実機は hmw アカウントの GD-Peeker-dev フォルダ)。
 
 - Chrome for Testing を ms-playwright キャッシュから自動検出(`CHROME_FOR_TESTING` で明示可)
 - **永続プロファイルは拡張の service worker スクリプトをキャッシュする**(2026-09-10 実機で確認: background.js を更新しても古いものが動き続け、webRequest リスナが無かった)。実機ハーネス(`tests/e2e-drive.mjs`、`scripts/drive-inspect.mjs`)は起動直後に `chrome.runtime.reload()` で拡張を起動し直す(`freshServiceWorker`)。手動確認でも `git pull` 後は `chrome://extensions` の再読み込みが必須

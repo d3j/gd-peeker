@@ -10,9 +10,9 @@ Google Drive に置いた `.html` / `.md` / `.txt` / `.xml` を、Drive 上で�
 
 ## 現在の状態(2026-09-10)
 
-- v0.1.0 M6 まで実装完了。Drive 一覧のダブルクリックで発生する preview 通信を `webRequest` で観測し、header sniff でファイル名と種別を決めて HTML / Markdown / txt / XML を viewer で開く。HTML は隔離 sandbox、Markdown はサニタイズ、txt は Shift_JIS を含む文字コード自動判定、XML は整形・折りたたみに対応
+- v0.1.0 M7 まで実装完了。Drive 一覧のダブルクリックで発生する preview 通信を `webRequest` で観測し、header sniff でファイル名と種別を決めて HTML / Markdown / txt / XML を viewer で開く。HTML は隔離 sandbox、Markdown はサニタイズ、txt は Shift_JIS を含む文字コード自動判定、XML は整形・折りたたみに対応。viewer はツールバー以外の全高・全幅を描画に使い、Markdown は既定でブラウザの横幅いっぱいに描く(設定 `md.fullWidth` を切ると従来の読みやすい幅)
 - 設定画面は自動起動、HTML、Markdown、テキスト、文字コード、表示言語の全項目を編集でき、変更は開いている viewer に反映される
-- テスト(2026-09-10): unit 33/33、隔離 E2E 46/46(html 9・md 9・text 8・settings 14・fetch failure 6)、**実機 E2E 15/15**(本物の Drive で html/xml をダブルクリック → 自動起動 → 描画。md/Shift_JIS txt はテストアカウントの既定アプリが StackEdit のため `/file/d/<id>/view` 経路で描画確認)
+- テスト(2026-09-10 M7): unit 33/33、隔離 E2E 60/60(html 15・md 13・text 9・settings 17・fetch failure 6)、**実機 E2E 17/17**(本物の Drive で html/md/Shift_JIS txt/xml の 4 形式をダブルクリック → 自動起動 → 描画。テストアカウントの `.md`/`.txt` の既定アプリ(StackEdit)を外したので全形式がダブルクリック経路)
 - 既知の挙動: Drive 側で拡張子に既定アプリが設定されていると、ダブルクリックはプレビューではなくそのアプリを開くので GD-Peeker は起動しない(正しい挙動)。xml など一部の形式は小さくても Google の「ウイルス スキャンに関する警告」ページを挟むが、confirm フォームを 1 回たどって取得する
 - Chrome ウェブストアは未公開
 
